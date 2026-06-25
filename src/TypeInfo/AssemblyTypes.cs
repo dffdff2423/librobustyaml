@@ -10,6 +10,11 @@ public sealed record AssemblyTypes {
     /// </summary>
     public Dictionary<string, PrototypeInfo> Prototypes { get; init; } = new();
 
+    /// <summary>
+    /// Mapping of type path to DataDefinitions or DataRecords. We treat those the same here.
+    /// </summary>
+    public Dictionary<string, DataDefinitionInfo> DataDefinitions { get; init; } = new();
+
     public static AssemblyTypes Merge(AssemblyTypes lhs, AssemblyTypes rhs) {
         var joined = new AssemblyTypes {
             Prototypes = new Dictionary<string, PrototypeInfo>(lhs.Prototypes)
@@ -17,6 +22,12 @@ public sealed record AssemblyTypes {
 
         foreach (var (kind, proto) in rhs.Prototypes) {
             if (!joined.Prototypes.TryAdd(kind, proto)) {
+                throw new Exception("Duplicate kind: " + kind);
+            }
+        }
+
+        foreach (var (kind, dd) in rhs.DataDefinitions) {
+            if (!joined.DataDefinitions.TryAdd(kind, dd)) {
                 throw new Exception("Duplicate kind: " + kind);
             }
         }

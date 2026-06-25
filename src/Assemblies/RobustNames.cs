@@ -21,4 +21,7 @@ public static class RobustNames {
     public const string ParentDataFieldAttribute = "Robust.Shared.Prototypes.ParentDataFieldAttribute";
 
     public const string AbstractDataFieldAttribute = "Robust.Shared.Prototypes.AbstractDataFieldAttribute";
+
+    public const string DataDefinitionAttribute = "Robust.Shared.Serialization.Manager.Attributes.DataDefinitionAttribute";
+    public const string DataRecordAttribute = "Robust.Shared.Serialization.Manager.Attributes.DataRecordAttribute";
 }

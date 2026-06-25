@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Text.Encodings.Web;
+using System.Text.Json;
 
 using YamlWarrior.Robust;
 using YamlWarrior.Robust.Assemblies;
@@ -25,7 +26,10 @@ internal static class Program {
         yamlCtx.LoadAllContent(build);
 
         if ((bool)opts["dump"]) {
-            Console.WriteLine(JsonSerializer.Serialize(yamlCtx.RobustTypes, new JsonSerializerOptions { WriteIndented = true }));
+            Console.WriteLine(JsonSerializer.Serialize(yamlCtx.RobustTypes, new JsonSerializerOptions {
+                WriteIndented = true,
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            }));
             Environment.Exit(0);
         }
     }

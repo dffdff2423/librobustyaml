@@ -29,46 +29,92 @@ public static class ContentAssembly {
         var types = asm.GetTypes();
         foreach (var ty in types) {
             var protoAttr = ty.GetCustomAttribute(engine.PrototypeAttribute);
-            if (protoAttr != null) {
-                var kindId = (string?)engine.PrototypeAttributeTypeProperty.GetValue(protoAttr);
-                if (kindId == null)
-                    kindId = ConvertTypeNameToPrototypeKindId(ty.Name);
+            if (protoAttr == null)
+                continue;
 
-                // Prototypes should not contain generics
-                Debug.Assert(!ty.ContainsGenericParameters);
-                Debug.Assert(ty.FullName != null);
+            var kindId = (string?)engine.PrototypeAttributeTypeProperty.GetValue(protoAttr);
+            if (kindId == null)
+                kindId = ConvertTypeNameToPrototypeKindId(ty.Name);
 
-                var idField = ty.GetProperties() .SingleOrDefault(p => p.GetCustomAttribute(engine.IdDataFieldAttribute) != null);
-                var parentField = ty.GetProperties().SingleOrDefault(p => p.GetCustomAttribute(engine.ParentDataFieldAttribute) != null);
-                var abstractField = ty.GetProperties().SingleOrDefault(p => p.GetCustomAttribute(engine.AbstractDataFieldAttribute) != null);
+            // Prototypes should not contain generics
+            Debug.Assert(!ty.ContainsGenericParameters);
+            Debug.Assert(ty.FullName != null);
 
-                var fields = ty.GetProperties()
-                    .Where(prop => prop.GetCustomAttribute(engine.DataFieldAttribute) != null)
-                    .Select(prop => ExtractDataFieldInfo(engine, prop))
-                    .ToArray();
+            var idField = ty.GetProperties() .SingleOrDefault(p => p.GetCustomAttribute(engine.IdDataFieldAttribute) != null);
+            var parentField = ty.GetProperties().SingleOrDefault(p => p.GetCustomAttribute(engine.ParentDataFieldAttribute) != null);
+            var abstractField = ty.GetProperties().SingleOrDefault(p => p.GetCustomAttribute(engine.AbstractDataFieldAttribute) != null);
 
-                infos.Prototypes.Add(kindId, new PrototypeInfo {
-                    KindId = kindId,
-                    FullName = ty.FullName,
-                    IdDataField = idField != null ? ExtractDataFieldInfo(engine, idField) : null,
-                    ParentDataField = parentField != null ? ExtractDataFieldInfo(engine, parentField) : null,
-                    AbstractDataField = abstractField != null ? ExtractDataFieldInfo(engine, abstractField) : null,
-                    DataFields = fields,
-                    SupportsInheritance = ty.ImplementsInterface(engine.IInheritingPrototype),
-                });
-            }
+            var fields = ty.GetProperties()
+                .Where(prop => prop.GetCustomAttribute(engine.DataFieldAttribute) != null)
+                .Select(prop => ExtractDataFieldInfo(engine, prop))
+                .ToArray();
+
+            infos.Prototypes.Add(kindId, new PrototypeInfo {
+                KindId = kindId,
+                FullName = ty.FullName,
+                IdDataField = idField != null ? ExtractDataFieldInfo(engine, idField) : null,
+                ParentDataField = parentField != null ? ExtractDataFieldInfo(engine, parentField) : null,
+                AbstractDataField = abstractField != null ? ExtractDataFieldInfo(engine, abstractField) : null,
+                DataFields = fields,
+                SupportsInheritance = ty.ImplementsInterface(engine.IInheritingPrototype),
+            });
         }
 
+        foreach (var ty in types) {
+            var ddAttr = ty.GetCustomAttribute(engine.DataDefinitionAttribute);
+            if (ddAttr == null)
+                continue;
+
+            // DDs should not be generic
+            Debug.Assert(!ty.ContainsGenericParameters);
+            Debug.Assert(ty.FullName != null);
+
+            var fields = ty.GetProperties()
+                .Where(prop => prop.GetCustomAttribute(engine.DataFieldAttribute) != null)
+                .Select(prop => ExtractDataFieldInfo(engine, prop))
+                .ToArray();
+
+            infos.DataDefinitions.Add(ty.FullName, new DataDefinitionInfo {
+                FullName = ty.FullName,
+                DataFields = fields,
+            });
+        }
+
+        foreach (var ty in types) {
+            var drAttr = ty.GetCustomAttribute(engine.DataRecordAttribute);
+            if (drAttr == null)
+                continue;
+
+            // DDs should not be generic
+            Debug.Assert(!ty.ContainsGenericParameters);
+            Debug.Assert(ty.FullName != null);
+
+            var fields = ty.GetProperties()
+                .Select(prop => ExtractDataFieldInfo(engine, prop))
+                .ToArray();
+
+            infos.DataDefinitions.Add(ty.FullName, new DataDefinitionInfo {
+                FullName = ty.FullName,
+                DataFields = fields,
+            });
+        }
         return infos;
     }
 
     [Pure]
     private static DataFieldInfo ExtractDataFieldInfo(EngineAssemblies engine, PropertyInfo prop) {
         var attr = prop.GetCustomAttribute(engine.DataFieldAttribute);
-        var tag = (string?)engine.DataFieldAttributeTagProperty.GetValue(attr) ?? ConvertFieldNameToTag(prop.Name);
-        var required = (bool?)engine.DataFieldAttributeRequiredProperty.GetValue(attr) ?? false;
-        var priority = (int?)engine.DataFieldBaseAttributePriorityProperty.GetValue(attr) ?? 0;
-        var customType = (Type?)engine.DataFieldBaseAttributeCustomTypeSerializerProperty.GetValue(attr);
+        var tag = ConvertFieldNameToTag(prop.Name);
+        var required = false;
+        var priority = 0;
+        Type? customType = null;
+
+        if (attr != null) {
+            tag = (string?)engine.DataFieldAttributeTagProperty.GetValue(attr) ?? tag;
+            required = (bool?)engine.DataFieldAttributeRequiredProperty.GetValue(attr) ?? required;
+            priority = (int?)engine.DataFieldBaseAttributePriorityProperty.GetValue(attr) ?? priority;
+            customType = (Type?)engine.DataFieldBaseAttributeCustomTypeSerializerProperty.GetValue(attr) ?? customType;
+        }
 
         Debug.Assert(prop.PropertyType.FullName != null);
 

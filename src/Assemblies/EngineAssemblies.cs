@@ -33,6 +33,9 @@ public sealed class EngineAssemblies {
     public readonly Type ParentDataFieldAttribute;
     public readonly Type AbstractDataFieldAttribute;
 
+    public readonly Type DataDefinitionAttribute;
+    public readonly Type DataRecordAttribute;
+
     public EngineAssemblies(string sharedPath) {
         var shared = Assembly.LoadFrom(sharedPath);
 
@@ -54,5 +57,8 @@ public sealed class EngineAssemblies {
         ParentDataFieldAttribute = shared.GetType(RobustNames.ParentDataFieldAttribute) ?? throw new InvalidDataException(sharedPath);
 
         AbstractDataFieldAttribute = shared.GetType(RobustNames.AbstractDataFieldAttribute) ?? throw new InvalidDataException(sharedPath);
+
+        DataDefinitionAttribute = shared.GetType(RobustNames.DataDefinitionAttribute) ?? throw new InvalidDataException(sharedPath);
+        DataRecordAttribute = shared.GetType(RobustNames.DataRecordAttribute) ?? throw new InvalidDataException(sharedPath);
     }
 }
