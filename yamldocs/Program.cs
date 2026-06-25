@@ -6,7 +6,7 @@ using YamlWarrior.Robust.Assemblies;
 namespace Yamldocs;
 
 internal static class Program {
-    static void Main(string[] argv) {
+    private static void Main(string[] argv) {
         var flags = new[] {
             new Flag(Type: ArgumentType.Bool, Long: "dump", HelpText: "Dump info extracted from assemblies as JSON then exit."),
             new Flag(Type: ArgumentType.String, Long: "assembly-dir", Short: 'a', HelpText: "Path to an ss14 build directory"),
@@ -22,9 +22,7 @@ internal static class Program {
 
         var rtSharedPath = Path.Join(build, AssemblyNames.RobustSharedPath);
         var yamlCtx = new YamlProcessingContext(rtSharedPath);
-        foreach (var seg in AssemblyNames.DefaultContentAssemblyPathSegments) {
-            yamlCtx.LoadContent(Path.Join(build, seg));
-        }
+        yamlCtx.LoadAllContent(build);
 
         if ((bool)opts["dump"]) {
             Console.WriteLine(JsonSerializer.Serialize(yamlCtx.RobustTypes, new JsonSerializerOptions { WriteIndented = true }));

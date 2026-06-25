@@ -21,4 +21,13 @@ public sealed class YamlProcessingContext(string robustSharedPath) {
         var data = ContentAssembly.ExtractYamlTypes(_engine, path);
         RobustTypes = AssemblyTypes.Merge(RobustTypes, data);
     }
+
+    /// <summary>
+    /// Load all relevant assemblies in the given build prefix
+    /// </summary>
+    public void LoadAllContent(string pfx) {
+        foreach (var seg in AssemblyNames.DefaultContentAssemblyPathSegments) {
+            LoadContent(Path.Join(pfx, seg));
+        }
+    }
 }

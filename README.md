@@ -1,6 +1,6 @@
 # Librobustyaml
 
-Project for dealing with RobustToolbox yaml files. Originally going to be part of my LSP server but was separated out
+Project for making tooling around RobustToolbox yaml files. Originally going to be part of my LSP server but was separated out
 into a separate project so other people can use it. Right now still a work on progress.
 
 Unlike other projects that deal with parsing Robust Yaml this directly loads and executes code from the RT assemblies.

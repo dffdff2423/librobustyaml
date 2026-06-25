@@ -38,9 +38,22 @@ public static class ContentAssembly {
                 Debug.Assert(!ty.ContainsGenericParameters);
                 Debug.Assert(ty.FullName != null);
 
+                var idField = ty.GetProperties() .SingleOrDefault(p => p.GetCustomAttribute(engine.IdDataFieldAttribute) != null);
+                var parentField = ty.GetProperties().SingleOrDefault(p => p.GetCustomAttribute(engine.ParentDataFieldAttribute) != null);
+                var abstractField = ty.GetProperties().SingleOrDefault(p => p.GetCustomAttribute(engine.AbstractDataFieldAttribute) != null);
+
+                var fields = ty.GetProperties()
+                    .Where(prop => prop.GetCustomAttribute(engine.DataFieldAttribute) != null)
+                    .Select(prop => ExtractDataFieldInfo(engine, prop))
+                    .ToArray();
+
                 infos.Prototypes.Add(kindId, new PrototypeInfo {
                     KindId = kindId,
                     FullName = ty.FullName,
+                    IdDataField = idField != null ? ExtractDataFieldInfo(engine, idField) : null,
+                    ParentDataField = parentField != null ? ExtractDataFieldInfo(engine, parentField) : null,
+                    AbstractDataField = abstractField != null ? ExtractDataFieldInfo(engine, abstractField) : null,
+                    DataFields = fields,
                     SupportsInheritance = ty.ImplementsInterface(engine.IInheritingPrototype),
                 });
             }
@@ -50,10 +63,30 @@ public static class ContentAssembly {
     }
 
     [Pure]
+    private static DataFieldInfo ExtractDataFieldInfo(EngineAssemblies engine, PropertyInfo prop) {
+        var attr = prop.GetCustomAttribute(engine.DataFieldAttribute);
+        var tag = (string?)engine.DataFieldAttributeTagProperty.GetValue(attr) ?? ConvertFieldNameToTag(prop.Name);
+        var required = (bool?)engine.DataFieldAttributeRequiredProperty.GetValue(attr) ?? false;
+        var priority = (int?)engine.DataFieldBaseAttributePriorityProperty.GetValue(attr) ?? 0;
+        var customType = (Type?)engine.DataFieldBaseAttributeCustomTypeSerializerProperty.GetValue(attr);
+
+        Debug.Assert(prop.PropertyType.FullName != null);
+
+        return new DataFieldInfo {
+            TypeName = prop.PropertyType.FullName,
+            Tag = tag,
+            Required = required,
+            Priority = priority,
+            CustomTypeSerializer = customType,
+            CustomTypeSerializerName = customType?.FullName,
+        };
+    }
+
+    [Pure]
     private static string ConvertTypeNameToPrototypeKindId(string str) {
         const string prototypeNameEnding = "Prototype";
 
-        // Taken directly from RT.
+        // Taken directly from RT: PrototypeUtility.CalculatePrototypeName
         // SPDX-SnippetBegin
         // SPDX-SnippetCopyrightText: Copyright (c) 2017-2026 Space Wizards Federation
         // SPDX-License-Identifier: MIT
@@ -62,6 +95,17 @@ public static class ContentAssembly {
             return $"{char.ToLowerInvariant(name[0])}{name.Slice(1).ToString()}";
 
         return $"{char.ToLowerInvariant(name[0])}{name.Slice(1, name.Length - prototypeNameEnding.Length - 1).ToString()}";
+        // SPDX-SnippetEnd
+    }
+
+    [Pure]
+    private static string ConvertFieldNameToTag(string str) {
+        // Taken directly from RT: DataDefinitionUtility.AutoGenerateTag
+        // SPDX-SnippetBegin
+        // SPDX-SnippetCopyrightText: Copyright (c) 2017-2026 Space Wizards Federation
+        // SPDX-License-Identifier: MIT
+        var span = str.AsSpan();
+        return $"{char.ToLowerInvariant(span[0])}{span.Slice(1).ToString()}";
         // SPDX-SnippetEnd
     }
 

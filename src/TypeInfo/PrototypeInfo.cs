@@ -6,6 +6,7 @@ using JetBrains.Annotations;
 
 namespace YamlWarrior.Robust.TypeInfo;
 
+[PublicAPI]
 public sealed record PrototypeInfo {
     public required string FullName { get; init; }
 
@@ -18,4 +19,29 @@ public sealed record PrototypeInfo {
     /// Wheaten or not the prototype supports yaml inheritance
     /// </summary>
     public bool SupportsInheritance { get; init; }
+
+    /// <summary>
+    /// Documentation
+    /// </summary>
+    public string Docs { get; init; } = "";
+
+    /// <summary>
+    /// The ID data field for the prototype
+    /// </summary>
+    public required DataFieldInfo? IdDataField { get; init; }
+
+    /// <summary>
+    /// Nonnull if <see cref="SupportsInheritance"/>
+    /// </summary>
+    public DataFieldInfo? ParentDataField { get; init; }
+
+    /// <summary>
+    /// Nonnull if <see cref="SupportsInheritance"/>
+    /// </summary>
+    public DataFieldInfo? AbstractDataField { get; init; }
+
+    /// <summary>
+    /// Member data fields
+    /// </summary>
+    public DataFieldInfo[] DataFields { get; init; } = [];
 }
