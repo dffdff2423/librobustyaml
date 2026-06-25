@@ -8,5 +8,8 @@
     <PropertyGroup>
         <BaseIntermediateOutputPath>$(SolutionDir)/obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath>
         <OutputPath>$(SolutionDir)/bin/$(MSBuildProjectName)/</OutputPath>
+
+        <Nullable>enable</Nullable>
+        <WarningsAsErrors>nullable</WarningsAsErrors>
     </PropertyGroup>
 </Project>

@@ -5,7 +5,6 @@
 -->
 
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/YamlWarrior.Robust.csproj" />
-  </Folder>
+  <Project Path="src/YamlWarrior.Robust.csproj" />
+  <Project Path="yamldocs/Yamldocs.csproj" />
 </Solution>
