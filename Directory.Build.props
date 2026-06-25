@@ -1,0 +1,12 @@
+<!--
+  SPDX-FileCopyrightText: (C) 2026 dffdff2423 <dffdff2423@gmail.com>
+
+  SPDX-License-Identifier: GPL-3.0-only
+-->
+
+<Project>
+    <PropertyGroup>
+        <BaseIntermediateOutputPath>$(SolutionDir)/obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath>
+        <OutputPath>$(SolutionDir)/bin/$(MSBuildProjectName)/</OutputPath>
+    </PropertyGroup>
+</Project>

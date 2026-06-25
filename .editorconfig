@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: (C) 2025 dffdff2423 <dffdff2423@gmail.com>
+#
+# SPDX-License-Identifier: GPL-3.0-only
+
+root = true
+
+[*]
+
+charset = utf-8
+indent_size = 4
+indent_style = space
+tab_width = 4
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+max_line_length = 120
+
+# REUSE-IgnoreStart
+file_header_template=SPDX-FileCopyrightText: (C) 2026 {author}\n\nSPDX-License-Identifier: GPL-3.0-only
+# REUSE-IgnoreEnd
+
+dotnet_separate_import_directive_groups = true
+dotnet_sort_system_directives_first = true
+
+csharp_style_var_elsewhere = true:suggestion
+csharp_style_var_for_built_in_types = false:none
+csharp_style_var_when_type_is_apparent = true:suggestion
+
+csharp_prefer_static_local_function = true:suggestion
+
+# New line preferences
+csharp_new_line_before_catch = false
+csharp_new_line_before_else = false
+csharp_new_line_before_finally = false
+csharp_new_line_before_members_in_object_initializers = false
+csharp_new_line_before_open_brace = none
+csharp_new_line_between_query_expression_clauses = true
+
+csharp_indent_switch_labels = false
+
+# ReSharper properties
+resharper_braces_for_ifelse = required_for_multiline
+resharper_csharp_wrap_arguments_style = chop_if_long
+resharper_csharp_wrap_parameters_style = chop_if_long
+resharper_keep_existing_attribute_arrangement = true
+resharper_wrap_chained_binary_patterns = chop_if_long
+resharper_wrap_chained_method_calls = chop_if_long
+resharper_csharp_trailing_comma_in_multiline_lists = true
+resharper_csharp_qualified_using_at_nested_scope = false
+resharper_csharp_prefer_qualified_reference = false
+resharper_csharp_allow_alias = false

@@ -1,0 +1,10 @@
+version = 1
+SPDX-PackageName = "Robust Yaml Warrior Libraries"
+SPDX-PackageSupplier = "dffdff2423 <dffdff2423@gmail.com>"
+SPDX-PackageDownloadLocation = "https://github.com/dffdff2423/yaml-warrior"
+
+[[annotations]]
+path = [ "librobustyaml.slnx.DotSettings" ]
+# This file is not copyrightable, but reuse makes me specify it
+SPDX-FileCopyrightText = "No copyright claimed"
+SPDX-License-Identifier = "GPL-3.0-only" # So I don't have to add an extra license file
