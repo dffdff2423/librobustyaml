@@ -1,4 +1,8 @@
-﻿using System.Text.Encodings.Web;
+﻿// SPDX-FileCopyrightText: (C) 2026 dffdff2423 <dffdff2423@gmail.com>
+//
+// SPDX-License-Identifier: GPL-3.0-only
+
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 using YamlWarrior.Robust;

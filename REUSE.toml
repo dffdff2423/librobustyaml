@@ -8,3 +8,8 @@ path = [ "librobustyaml.slnx.DotSettings" ]
 # This file is not copyrightable, but reuse makes me specify it
 SPDX-FileCopyrightText = "No copyright claimed"
 SPDX-License-Identifier = "GPL-3.0-only" # So I don't have to add an extra license file
+
+[[annotations]]
+path = [ "README.md" ]
+SPDX-FileCopyrightText = "(C) dffdff2423 <dffdff2423@gmail.com>"
+SPDX-License-Identifier = "GPL-3.0-only" # So I don't have to add an extra license file
