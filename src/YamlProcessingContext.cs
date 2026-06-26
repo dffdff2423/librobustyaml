@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Xml.Linq;
+
 using JetBrains.Annotations;
 
 using YamlWarrior.Robust.TypeInfo;
@@ -19,14 +21,24 @@ namespace YamlWarrior.Robust;
 /// </remarks>
 [PublicAPI]
 public sealed class YamlProcessingContext(string robustSharedPath) {
+    /// <summary>
+    /// Type information parsed from assemblies
+    /// </summary>
     public AssemblyTypes RobustTypes { get; private set; } = new();
+
     private readonly EngineAssemblies _engine = new(robustSharedPath);
+
+    /// <summary>
+    /// Documentation XMLs for loaded assemblies
+    /// </summary>
+    public Dictionary<string, XElement> Documentation { get; } = new();
 
     /// <summary>
     /// Adds a content assembly to this context.
     /// </summary>
     public void LoadContent(string path) {
-        var data = ContentAssembly.ExtractYamlTypes(_engine, path);
+        var docs = XElement.Load(Path.ChangeExtension(path, ".xml"));
+        var data = ContentAssembly.ExtractYamlTypes(_engine, path, docs);
         RobustTypes = AssemblyTypes.Merge(RobustTypes, data);
     }
 

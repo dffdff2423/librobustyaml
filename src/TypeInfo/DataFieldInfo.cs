@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 
 using JetBrains.Annotations;
 
@@ -44,7 +45,13 @@ public sealed record DataFieldInfo {
     public string? CustomTypeSerializerName { get; init; }
 
     /// <summary>
-    /// Documentation
+    /// Documentation in <see cref="XElement"/> form.
     /// </summary>
-    public string Docs { get; init; } = "";
+    [JsonIgnore]
+    public XElement? Docs { get; init; }
+
+    /// <summary>
+    /// Documentation in string form if you don't like <see cref="System.Xml.Linq.XElement"/>
+    /// </summary>
+    public string? DocsString { get; init; } = "";
 }

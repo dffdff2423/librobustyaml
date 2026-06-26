@@ -40,7 +40,8 @@ public sealed record AssemblyTypes {
         }
 
         foreach (var (kind, comp) in rhs.Components) {
-            if (!joined.DataDefinitions.TryAdd(kind, comp)) {
+            if (!joined.Components.TryAdd(kind, comp)) {
+                // TODO: Support predicted components
                 throw new Exception("Duplicate kind: " + kind);
             }
         }

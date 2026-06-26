@@ -4,6 +4,7 @@
 
 using System.Diagnostics;
 using System.Reflection;
+using System.Xml.Linq;
 
 using JetBrains.Annotations;
 
@@ -21,7 +22,8 @@ public static class ContentAssembly {
     /// </summary>
     /// <param name="engine">Engine info</param>
     /// <param name="path">Assembly to extract</param>
-    public static AssemblyTypes ExtractYamlTypes(EngineAssemblies engine, string path) {
+    /// <param name="docs">XML documentation file for the given assembly</param>
+    public static AssemblyTypes ExtractYamlTypes(EngineAssemblies engine, string path, XElement? docs = null) {
         var infos = new AssemblyTypes();
 
         var asm = Assembly.LoadFrom(path);
@@ -32,9 +34,8 @@ public static class ContentAssembly {
             if (protoAttr == null)
                 continue;
 
-            var kindId = (string?)engine.PrototypeAttributeTypeProperty.GetValue(protoAttr);
-            if (kindId == null)
-                kindId = ConvertTypeNameToPrototypeKindId(ty.Name);
+            var kindId = (string?)engine.PrototypeAttributeTypeProperty.GetValue(protoAttr)
+                         ?? ConvertTypeNameToPrototypeKindId(ty.Name);
 
             // Prototypes should not contain generics
             Debug.Assert(!ty.ContainsGenericParameters);
@@ -44,17 +45,18 @@ public static class ContentAssembly {
             var parentField = ty.GetProperties().SingleOrDefault(p => p.GetCustomAttribute(engine.ParentDataFieldAttribute) != null);
             var abstractField = ty.GetProperties().SingleOrDefault(p => p.GetCustomAttribute(engine.AbstractDataFieldAttribute) != null);
 
-            var fields = ty.GetProperties()
-                .Where(prop => prop.GetCustomAttribute(engine.DataFieldAttribute) != null)
-                .Select(prop => ExtractDataFieldInfo(engine, prop))
-                .ToArray();
+            var fields = ExtractDataFields(engine, ty, docs, true);
+
+            var docElem = docs != null ? GetTypeDocs(docs, ty.FullName) : null;
 
             infos.Prototypes.Add(kindId, new PrototypeInfo {
                 KindId = kindId,
                 FullName = ty.FullName,
-                IdDataField = idField != null ? ExtractDataFieldInfo(engine, idField) : null,
-                ParentDataField = parentField != null ? ExtractDataFieldInfo(engine, parentField) : null,
-                AbstractDataField = abstractField != null ? ExtractDataFieldInfo(engine, abstractField) : null,
+                IdDataField = idField != null ? ExtractDataFieldInfo(engine, idField, docs) : null,
+                ParentDataField = parentField != null ? ExtractDataFieldInfo(engine, parentField, docs) : null,
+                AbstractDataField = abstractField != null ? ExtractDataFieldInfo(engine, abstractField, docs) : null,
+                Docs = docElem,
+                DocsString = docElem?.ToString(),
                 DataFields = fields,
                 SupportsInheritance = ty.ImplementsInterface(engine.IInheritingPrototype),
             });
@@ -70,14 +72,15 @@ public static class ContentAssembly {
             Debug.Assert(!ty.ContainsGenericParameters);
             Debug.Assert(ty.FullName != null);
 
-            var fields = ty.GetProperties()
-                .Where(prop => prop.GetCustomAttribute(engine.DataFieldAttribute) != null)
-                .Select(prop => ExtractDataFieldInfo(engine, prop))
-                .ToArray();
+            var fields = ExtractDataFields(engine, ty, docs, true);
+
+            var docElem = docs != null ? GetTypeDocs(docs, ty.FullName) : null;
 
             infos.DataDefinitions.Add(ty.FullName, new DataDefinitionInfo {
                 FullName = ty.FullName,
                 DataFields = fields,
+                Docs = docElem,
+                DocsString = docElem?.ToString(),
             });
         }
 
@@ -90,13 +93,15 @@ public static class ContentAssembly {
             Debug.Assert(!ty.ContainsGenericParameters);
             Debug.Assert(ty.FullName != null);
 
-            var fields = ty.GetProperties()
-                .Select(prop => ExtractDataFieldInfo(engine, prop))
-                .ToArray();
+            var fields = ExtractDataFields(engine, ty, docs, false);
+
+            var docElem = docs != null ? GetTypeDocs(docs, ty.FullName) : null;
 
             infos.DataDefinitions.Add(ty.FullName, new DataDefinitionInfo {
                 FullName = ty.FullName,
                 DataFields = fields,
+                Docs = docElem,
+                DocsString = docElem?.ToString(),
             });
         }
 
@@ -116,23 +121,37 @@ public static class ContentAssembly {
                 yamlName = (string?)engine.ComponentProtoNameAttributePrototypeNameProperty.GetValue(cpAttr) ?? yamlName;
             }
 
-            var fields = ty.GetProperties()
-                .Where(prop => prop.GetCustomAttribute(engine.DataFieldAttribute) != null)
-                .Select(prop => ExtractDataFieldInfo(engine, prop))
-                .ToArray();
+            var fields = ExtractDataFields(engine, ty, docs, true);
+
+            var docElem = docs != null ? GetTypeDocs(docs, ty.FullName) : null;
 
             infos.Components.Add(ty.FullName, new ComponentInfo {
                 FullName = ty.FullName,
                 DataFields = fields,
                 Unsaved = unsavedAttr != null,
-                YamlName = yamlName
+                YamlName = yamlName,
+                Docs = docElem,
+                DocsString = docElem?.ToString(),
             });
         }
         return infos;
     }
 
     [Pure]
-    private static DataFieldInfo ExtractDataFieldInfo(EngineAssemblies engine, PropertyInfo prop) {
+    private static DataFieldInfo[] ExtractDataFields(EngineAssemblies engine, Type ty, XElement? docs, bool requireAttr) {
+        var fields = ty.GetFields()
+            .Where(prop => !requireAttr || prop.GetCustomAttribute(engine.DataFieldAttribute) != null)
+            .Select(prop => ExtractDataFieldInfo(engine, prop, docs));
+        var props = ty.GetProperties()
+            .Where(prop => !requireAttr || prop.GetCustomAttribute(engine.DataFieldAttribute) != null)
+            .Select(prop => ExtractDataFieldInfo(engine, prop, docs))
+            .Concat(fields)
+            .ToArray();
+        return props;
+    }
+
+    [Pure]
+    private static DataFieldInfo ExtractDataFieldInfo(EngineAssemblies engine, MemberInfo prop, XElement? docs) {
         var attr = prop.GetCustomAttribute(engine.DataFieldAttribute);
         var tag = ConvertFieldNameToTag(prop.Name);
         var required = false;
@@ -146,17 +165,46 @@ public static class ContentAssembly {
             customType = (Type?)engine.DataFieldBaseAttributeCustomTypeSerializerProperty.GetValue(attr) ?? customType;
         }
 
-        Debug.Assert(prop.PropertyType.FullName != null);
+        var type = GetPropFieldType(prop);
+        Debug.Assert(type.FullName != null);
+
+        var owner = prop.DeclaringType?.FullName ?? throw new InvalidDataException("DataField property does not have owner");
+        var docElem = docs != null ? GetPropertyDocs(docs, owner, prop.Name) : null;
 
         return new DataFieldInfo {
-            TypeName = prop.PropertyType.FullName,
+            TypeName = type.FullName,
             Tag = tag,
             Required = required,
             Priority = priority,
             CustomTypeSerializer = customType,
             CustomTypeSerializerName = customType?.FullName,
+            Docs = docElem,
+            DocsString = docElem?.ToString() ?? "",
         };
     }
+
+    [Pure]
+    private static Type GetPropFieldType(MemberInfo prop) {
+        return prop.MemberType switch {
+            MemberTypes.Field => ((FieldInfo)prop).FieldType,
+            MemberTypes.Property => ((PropertyInfo)prop).PropertyType,
+            _ => throw new ArgumentException($"{prop.MemberType} is not a property or a field")
+        };
+    }
+
+    [Pure]
+    private static XElement? GetTypeDocs(XElement docs, string typeName)
+        => docs
+            .Element("members")
+            ?.Elements()
+            .SingleOrDefault(el => el.Attribute("name")?.Value == "T:" + typeName);
+
+    [Pure]
+    private static XElement? GetPropertyDocs(XElement docs, string typeName, string propName)
+        => docs
+            .Element("members")
+            ?.Elements()
+            .SingleOrDefault(el => el.Attribute("name")?.Value == "F:" + typeName + propName);
 
     [Pure]
     private static string ConvertTypeNameToPrototypeKindId(string str) {

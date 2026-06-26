@@ -2,10 +2,19 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Text.Json.Serialization;
+using System.Xml.Linq;
+
 using JetBrains.Annotations;
 
 namespace YamlWarrior.Robust.TypeInfo;
 
+/// <summary>
+/// RT Data definition
+/// </summary>
+/// <remarks>
+/// All DataDefinition types support write-only serialization with <see cref="System.Text.Json"/>.
+/// </remarks>
 [PublicAPI]
 public record DataDefinitionInfo {
     /// <summary>
@@ -14,9 +23,15 @@ public record DataDefinitionInfo {
     public required string FullName { get; init; }
 
     /// <summary>
-    /// Documentation
+    /// Documentation in <see cref="XElement"/> form
     /// </summary>
-    public string Docs { get; init; } = "";
+    [JsonIgnore]
+    public XElement? Docs { get; init; }
+
+    /// <summary>
+    /// If you want to parse XML some other way. If you are fine with <see cref="System.Xml.Linq.XElement"/> use <see cref="Docs"/>.
+    /// </summary>
+    public string? DocsString { get; init; }
 
     /// <summary>
     /// Member data fields
