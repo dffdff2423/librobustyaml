@@ -2,7 +2,7 @@
 using System.Text.Json;
 
 using YamlWarrior.Robust;
-using YamlWarrior.Robust.Assemblies;
+using YamlWarrior.Robust.TypeLoading;
 
 namespace Yamldocs;
 

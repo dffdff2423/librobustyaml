@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-namespace YamlWarrior.Robust.Assemblies;
+namespace YamlWarrior.Robust.TypeLoading;
 
 // TODO: this should be in some kind of config file
 public static class AssemblyNames {

@@ -8,7 +8,7 @@ using JetBrains.Annotations;
 
 using YamlWarrior.Robust.TypeInfo;
 
-namespace YamlWarrior.Robust.Assemblies;
+namespace YamlWarrior.Robust.TypeLoading;
 
 /// <summary>
 /// Types extracted from RT for reflection use
@@ -36,6 +36,11 @@ public sealed class EngineAssemblies {
     public readonly Type DataDefinitionAttribute;
     public readonly Type DataRecordAttribute;
 
+    public readonly Type RegisterComponentAttribute;
+    public readonly Type ComponentProtoNameAttribute;
+    public readonly PropertyInfo ComponentProtoNameAttributePrototypeNameProperty;
+    public readonly Type UnsavedComponentAttribute;
+
     public EngineAssemblies(string sharedPath) {
         var shared = Assembly.LoadFrom(sharedPath);
 
@@ -60,5 +65,10 @@ public sealed class EngineAssemblies {
 
         DataDefinitionAttribute = shared.GetType(RobustNames.DataDefinitionAttribute) ?? throw new InvalidDataException(sharedPath);
         DataRecordAttribute = shared.GetType(RobustNames.DataRecordAttribute) ?? throw new InvalidDataException(sharedPath);
+
+        RegisterComponentAttribute = shared.GetType(RobustNames.RegisterComponentAttribute) ?? throw new InvalidDataException(sharedPath);
+        ComponentProtoNameAttribute = shared.GetType(RobustNames.ComponentProtoNameAttribute) ?? throw new InvalidDataException(sharedPath);
+        ComponentProtoNameAttributePrototypeNameProperty = ComponentProtoNameAttribute.GetProperty("PrototypeName") ?? throw new InvalidDataException(sharedPath);
+        UnsavedComponentAttribute = shared.GetType(RobustNames.UnsavedComponentAttribute) ?? throw new InvalidDataException(sharedPath);
     }
 }

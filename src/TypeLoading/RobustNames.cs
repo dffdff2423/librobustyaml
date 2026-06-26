@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
-namespace YamlWarrior.Robust.Assemblies;
+namespace YamlWarrior.Robust.TypeLoading;
 
 /// <summary>
-/// Fully qualified names of RT types.
+/// Fully qualified names of RT types that we care about.
 /// </summary>
 // ReSharper disable InconsistentNaming
 public static class RobustNames {
@@ -24,4 +24,8 @@ public static class RobustNames {
 
     public const string DataDefinitionAttribute = "Robust.Shared.Serialization.Manager.Attributes.DataDefinitionAttribute";
     public const string DataRecordAttribute = "Robust.Shared.Serialization.Manager.Attributes.DataRecordAttribute";
+
+    public const string RegisterComponentAttribute = "Robust.Shared.GameObjects.RegisterComponentAttribute";
+    public const string ComponentProtoNameAttribute  = "Robust.Shared.GameObjects.ComponentProtoNameAttribute";
+    public const string UnsavedComponentAttribute = "Robust.Shared.GameObjects.UnsavedComponentAttribute";
 }

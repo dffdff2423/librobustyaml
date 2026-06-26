@@ -15,9 +15,16 @@ public sealed record AssemblyTypes {
     /// </summary>
     public Dictionary<string, DataDefinitionInfo> DataDefinitions { get; init; } = new();
 
+    /// <summary>
+    /// Mapping of YamlName to Components.
+    /// </summary>
+    public Dictionary<string, ComponentInfo> Components { get; init; } = new();
+
     public static AssemblyTypes Merge(AssemblyTypes lhs, AssemblyTypes rhs) {
         var joined = new AssemblyTypes {
-            Prototypes = new Dictionary<string, PrototypeInfo>(lhs.Prototypes)
+            Prototypes = new Dictionary<string, PrototypeInfo>(lhs.Prototypes),
+            DataDefinitions = new Dictionary<string, DataDefinitionInfo>(lhs.DataDefinitions),
+            Components = new Dictionary<string, ComponentInfo>(lhs.Components),
         };
 
         foreach (var (kind, proto) in rhs.Prototypes) {
@@ -28,6 +35,12 @@ public sealed record AssemblyTypes {
 
         foreach (var (kind, dd) in rhs.DataDefinitions) {
             if (!joined.DataDefinitions.TryAdd(kind, dd)) {
+                throw new Exception("Duplicate kind: " + kind);
+            }
+        }
+
+        foreach (var (kind, comp) in rhs.Components) {
+            if (!joined.DataDefinitions.TryAdd(kind, comp)) {
                 throw new Exception("Duplicate kind: " + kind);
             }
         }

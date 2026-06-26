@@ -9,7 +9,7 @@ using JetBrains.Annotations;
 
 using YamlWarrior.Robust.TypeInfo;
 
-namespace YamlWarrior.Robust.Assemblies;
+namespace YamlWarrior.Robust.TypeLoading;
 
 /// <summary>
 /// Operations on Content assemblies. Note that we consider any assembly which we parse DataDefinitions from a content
@@ -60,6 +60,7 @@ public static class ContentAssembly {
             });
         }
 
+        // I know this is needlessly iterating types an unneeded number of times but this is fast enough for this and makes the code easier to follow
         foreach (var ty in types) {
             var ddAttr = ty.GetCustomAttribute(engine.DataDefinitionAttribute);
             if (ddAttr == null)
@@ -96,6 +97,35 @@ public static class ContentAssembly {
             infos.DataDefinitions.Add(ty.FullName, new DataDefinitionInfo {
                 FullName = ty.FullName,
                 DataFields = fields,
+            });
+        }
+
+        foreach (var ty in types) {
+            var rcAttr =  ty.GetCustomAttribute(engine.RegisterComponentAttribute);
+            if (rcAttr == null)
+                continue;
+            var cpAttr = ty.GetCustomAttribute(engine.ComponentProtoNameAttribute);
+            var unsavedAttr = ty.GetCustomAttribute(engine.UnsavedComponentAttribute);
+
+            // DDs should not be generic
+            Debug.Assert(!ty.ContainsGenericParameters);
+            Debug.Assert(ty.FullName != null);
+
+            var yamlName = ConvertComponentName(ty.Name);
+            if (cpAttr != null) {
+                yamlName = (string?)engine.ComponentProtoNameAttributePrototypeNameProperty.GetValue(cpAttr) ?? yamlName;
+            }
+
+            var fields = ty.GetProperties()
+                .Where(prop => prop.GetCustomAttribute(engine.DataFieldAttribute) != null)
+                .Select(prop => ExtractDataFieldInfo(engine, prop))
+                .ToArray();
+
+            infos.Components.Add(ty.FullName, new ComponentInfo {
+                FullName = ty.FullName,
+                DataFields = fields,
+                Unsaved = unsavedAttr != null,
+                YamlName = yamlName
             });
         }
         return infos;
@@ -152,6 +182,45 @@ public static class ContentAssembly {
         // SPDX-License-Identifier: MIT
         var span = str.AsSpan();
         return $"{char.ToLowerInvariant(span[0])}{span.Slice(1).ToString()}";
+        // SPDX-SnippetEnd
+    }
+
+    /// <summary>
+    /// Based on RT ComponentFactory.CalculateComponentName
+    /// </summary>
+    private static string ConvertComponentName(string typeName)
+    {
+        // Taken from RT, slightly modified by aquif for librobustyaml
+        // SPDX-SnippetBegin
+        // SPDX-SnippetCopyrightText: Copyright (c) 2017-2026 Space Wizards Federation
+        // SPDX-License-Identifier: MIT
+        const string component = "Component";
+        if (!typeName.EndsWith(component))
+        {
+            return typeName;
+
+            // RT throws here, we don't just to be a bit graceful.
+            // throw new InvalidDataException($"Component {typeName} must end with the word Component");
+        }
+
+        string name = typeName[..^component.Length];
+        const string client = "Client";
+        const string server = "Server";
+        const string shared = "Shared";
+        if (typeName.StartsWith(client, StringComparison.Ordinal))
+        {
+            name = typeName[client.Length..^component.Length];
+        }
+        else if (typeName.StartsWith(server, StringComparison.Ordinal))
+        {
+            name = typeName[server.Length..^component.Length];
+        }
+        else if (typeName.StartsWith(shared, StringComparison.Ordinal))
+        {
+            name = typeName[shared.Length..^component.Length];
+        }
+        Debug.Assert(name != String.Empty, $"Component {typeName} has invalid name");
+        return name;
         // SPDX-SnippetEnd
     }
 
