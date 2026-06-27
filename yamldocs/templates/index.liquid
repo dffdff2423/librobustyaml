@@ -4,4 +4,29 @@
     <meta name="generator" content="{{ generator_info }}" >
 
     <title>{{ github_slug }} YAML documentation </title>
+<body>
+<h1>Yaml documentation for <a href="https://github.com/{{ github_slug }}">{{ github_slug }}</a></h1>
+
+<h2>Prototypes</h2>
+{% for proto in asm_types.Prototypes %}
+    <div>
+        <h3><a href="./{{ proto }}.html">{{ proto }}</a></h3>
+        {{ type_info.Prototypes[proto].Docs | doc_summerize }}
+    </div>
+{% endfor %}
+<h2>Components</h2>
+{% for comp in asm_types.Components %}
+    <div>
+        <h3><a href="./{{ comp }}.html">{{ comp }}</a></h3>
+        {{ type_info.Components[comp].Docs | doc_summerize }}
+    </div>
+{% endfor %}
+<h2>Data Definitions</h2>
+{% for dd in asm_types.DataDefs %}
+    <div>
+        <h3><a href="./{{ dd | url_encode }}.html">{{ dd }}</a></h3>
+        {{ type_info.DataDefinitions[dd].Docs | doc_summerize }}
+    </div>
+{% endfor %}
+</body>
 </html>
