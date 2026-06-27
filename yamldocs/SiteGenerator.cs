@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Xml.Linq;
 
 using Fluid;
@@ -20,15 +22,17 @@ public static class SiteGenerator {
     public sealed record Parameters {
         public string? GhSlug { get; init; }
 
+        public string? GitCommit { get; init; }
+
         public required string OutputPath { get; init; }
 
-        public required YamlProcessingContext Types { get; init; }
+        public required YamlProcessingContext Yaml { get; init; }
     }
 
-    private static readonly ManifestEmbeddedFileProvider TemplateProvider = new(typeof(SiteGenerator).Assembly, "templates");
+    private static readonly ManifestEmbeddedFileProvider ResourceProvider = new(typeof(SiteGenerator).Assembly, "res");
 
     public static IFluidTemplate GetTemplate(FluidParser parser, string path) {
-        using var reader = new StreamReader(TemplateProvider.GetFileInfo(path).CreateReadStream(), Encoding.UTF8);
+        using var reader = new StreamReader(ResourceProvider.GetFileInfo(path).CreateReadStream(), Encoding.UTF8);
         var readContents = reader.ReadToEnd();
         return parser.Parse(readContents);
     }
@@ -38,7 +42,7 @@ public static class SiteGenerator {
         var ctx = new TemplateContext {
             Options = {
                 MemberAccessStrategy = new UnsafeMemberAccessStrategy(),
-                FileProvider = TemplateProvider,
+                FileProvider = ResourceProvider,
             },
         };
         ctx.Options.Filters.AddFilter("doc_summerize", DocSummerize);
@@ -48,11 +52,11 @@ public static class SiteGenerator {
         ctx.SetValue("generator_info", $"yamldocs v{generatorVersion}, librobustyaml v{rtYamlVersion}");
         ctx.SetValue("github_slug",  opts.GhSlug);
 
-        var protos = opts.Types.RobustTypes.Prototypes.Keys.ToArray();
+        var protos = opts.Yaml.RobustTypes.Prototypes.Keys.ToArray();
         protos.Sort();
-        var dds = opts.Types.RobustTypes.DataDefinitions.Keys.ToArray();
+        var dds = opts.Yaml.RobustTypes.DataDefinitions.Keys.ToArray();
         dds.Sort();
-        var comps = opts.Types.RobustTypes.Components.Keys.ToArray();
+        var comps = opts.Yaml.RobustTypes.Components.Keys.ToArray();
         comps.Sort();
 
         ctx.SetValue("asm_types",
@@ -62,7 +66,7 @@ public static class SiteGenerator {
                 ["Components"] = comps,
             });
 
-        ctx.SetValue("type_info", opts.Types.RobustTypes);
+        ctx.SetValue("type_info", opts.Yaml.RobustTypes);
 
         var index = GetTemplate(parser, "index.liquid");
         var indexTxt = index.Render(ctx);
@@ -71,13 +75,29 @@ public static class SiteGenerator {
         Directory.CreateDirectory(output);
 
         File.WriteAllText(Path.Combine(output, "index.html"), indexTxt);
+
+        var jsonTxt = JsonSerializer.Serialize(opts.Yaml.RobustTypes, new JsonSerializerOptions {
+                WriteIndented = true,
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            });
+        File.WriteAllText(Path.Combine(output, "types.json"), jsonTxt);
+
+        foreach (var f in ResourceProvider.GetDirectoryContents(".")) {
+            if (Path.GetExtension(f.Name) == ".liquid") {
+                continue;
+            }
+            using var os = File.Create(Path.Combine(output, f.Name));
+            using var iss = f.CreateReadStream();
+            iss.CopyTo(os);
+        }
     }
 
+    [Pure]
     private static ValueTask<FluidValue> DocSummerize(FluidValue input, FilterArguments filter, TemplateContext ctx) {
         if (input.IsNil())
             return EmptyValue.Instance;
         if (input.ToObjectValue() is not XElement el)
-            throw new ArgumentException("Input must be documentation XElement", nameof(input));
+            throw new ArgumentException("Input must be XElement", nameof(input));
         if (el.Name == "member") {
             return new StringValue(el.Element("summary")?.Value ?? "");
         }

@@ -23,6 +23,6 @@
 
         <ProjectReference Include="../src/YamlWarrior.Robust.csproj" />
 
-        <EmbeddedResource Include="templates/**" />
+        <EmbeddedResource Include="res/**" />
     </ItemGroup>
 </Project>

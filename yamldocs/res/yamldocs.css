@@ -1,0 +1,45 @@
+/* SPDX-FileCopyrightText: (C) 2026 dffdff2423 <dffdff2423@gmail.com>
+ *
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
+:root {
+    /* Colors based on notaslug.org CSS */
+    --bg-color: #01242e;
+    --primary-text-color: #eee;
+    --secondary-text-color: #ccc;
+    --link-color: #8cc2dd;
+    --visited-link-color: #8cc2dd;
+    --highlight: #003544;
+    --title: #ddd;
+}
+
+body {
+    font-family: monospace;
+    font-size: 16px;
+    line-height: 1.4;
+    margin: 0 auto;
+    width: 80%;
+    background-color: var(--bg-color);
+    color: var(--primary-text-color);
+}
+
+a {
+    color: var(--link-color)
+}
+
+h2, h3, h4, h5, h6 {
+    margin-top: 0.5rem;
+}
+
+a:visited {
+    color: var(--visited-link-color);
+}
+
+.boxed {
+    border: 1px solid var(--secondary-text-color);
+    background-color: var(--highlight);
+    color: var(--secondary-text-color);
+    padding: 1em;
+    margin: 1em;
+}

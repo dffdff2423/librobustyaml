@@ -17,6 +17,7 @@ internal static class Program {
             new Flag(Type: ArgumentType.String, Long: "assembly-dir", Short: 'a', HelpText: "Path to an ss14 build directory"),
             new Flag(Type: ArgumentType.String, Long: "output", Short: 'o', HelpText: "Path to output doc site (required if no --dump)"),
             new Flag(Type: ArgumentType.String, Long: "gh-slug", Short: 'g', HelpText: "GitHub slug for the fork (optional)"),
+            new Flag(Type: ArgumentType.String, Long: "commit", Short: 'c', HelpText: "Commit the docs are generated for"),
         };
         var opts = ArgumentParser.ParseArguments(flags, "-a <assembly> [options...]", argv);
 
@@ -46,8 +47,9 @@ internal static class Program {
         var output = (string)opts["output"];
         SiteGenerator.Generate(new SiteGenerator.Parameters {
             GhSlug = opts.TryGetValue("gh-slug", out object? opt) ? (string)opt : null,
+            GitCommit = opts.TryGetValue("commit", out object? opt2) ? (string)opt2 : null,
             OutputPath = output,
-            Types = yamlCtx,
+            Yaml = yamlCtx,
         });
     }
 }
