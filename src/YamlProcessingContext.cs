@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Collections.Concurrent;
 using System.Xml.Linq;
 
 using JetBrains.Annotations;
@@ -24,7 +25,7 @@ public sealed class YamlProcessingContext(string robustSharedPath) {
     /// <summary>
     /// Type information parsed from assemblies
     /// </summary>
-    public AssemblyTypes RobustTypes { get; private set; } = new();
+    public RobustAssemblyTypes RobustTypes { get; private set; } = new();
 
     private readonly EngineAssemblies _engine = new(robustSharedPath);
 
@@ -37,17 +38,28 @@ public sealed class YamlProcessingContext(string robustSharedPath) {
     /// Adds a content assembly to this context.
     /// </summary>
     public void LoadContent(string path) {
+        var data = LoadContentInternal(path);
+        RobustTypes = RobustAssemblyTypes.Merge(RobustTypes, data);
+    }
+
+    private RobustAssemblyTypes LoadContentInternal(string path) {
         var docs = XElement.Load(Path.ChangeExtension(path, ".xml"));
-        var data = ContentAssembly.ExtractYamlTypes(_engine, path, docs);
-        RobustTypes = AssemblyTypes.Merge(RobustTypes, data);
+        return ContentAssembly.ExtractYamlTypes(_engine, path, docs);
     }
 
     /// <summary>
     /// Load all relevant assemblies in the given build prefix
     /// </summary>
     public void LoadAllContent(string pfx) {
-        foreach (var seg in AssemblyNames.DefaultContentAssemblyPathSegments) {
-            LoadContent(Path.Join(pfx, seg));
+        var asms = new ConcurrentBag<RobustAssemblyTypes>();
+
+        Parallel.ForEach(AssemblyNames.DefaultContentAssemblyPathSegments,
+            asm => {
+                asms.Add(LoadContentInternal(Path.Combine(pfx, asm)));
+            });
+
+        foreach (var asm in asms) {
+            RobustTypes = RobustAssemblyTypes.Merge(RobustTypes, asm);
         }
     }
 }

@@ -13,13 +13,19 @@ namespace Yamldocs;
 internal static class Program {
     private static void Main(string[] argv) {
         var flags = new[] {
-            new Flag(Type: ArgumentType.Bool, Long: "dump", HelpText: "Dump info extracted from assemblies as JSON then exit."),
+            new Flag(Type: ArgumentType.Bool, Long: "dump", HelpText: "Dump info extracted from assemblies as JSON to the CLI then exit."),
             new Flag(Type: ArgumentType.String, Long: "assembly-dir", Short: 'a', HelpText: "Path to an ss14 build directory"),
+            new Flag(Type: ArgumentType.String, Long: "output", Short: 'o', HelpText: "Path to output doc site (required if no --dump)"),
+            new Flag(Type: ArgumentType.String, Long: "gh-slug", Short: 'g', HelpText: "GitHub slug for the fork (optional)"),
         };
         var opts = ArgumentParser.ParseArguments(flags, "-a <assembly> [options...]", argv);
 
         if (!opts.ContainsKey("assembly-dir")) {
             Console.Error.WriteLine("Must specify a build directory with -a or --assembly-dir");
+            Environment.Exit(1);
+        }
+        if (!opts.ContainsKey("output") && !opts.ContainsKey("dump")) {
+            Console.Error.WriteLine("Must specify an output directory");
             Environment.Exit(1);
         }
 
@@ -29,12 +35,19 @@ internal static class Program {
         var yamlCtx = new YamlProcessingContext(rtSharedPath);
         yamlCtx.LoadAllContent(build);
 
-        if ((bool)opts["dump"]) {
+        if (opts.ContainsKey("dump")) {
             Console.WriteLine(JsonSerializer.Serialize(yamlCtx.RobustTypes, new JsonSerializerOptions {
                 WriteIndented = true,
                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
             }));
             Environment.Exit(0);
         }
+
+        var output = (string)opts["output"];
+        SiteGenerator.Generate(new SiteGenerator.Parameters {
+            GhSlug = opts.TryGetValue("gh-slug", out object? opt) ? (string)opt : null,
+            OutputPath = output,
+            Types = yamlCtx,
+        });
     }
 }

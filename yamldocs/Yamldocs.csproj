@@ -11,11 +11,18 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Version>1.0-devel</Version>
+
+        <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="JetBrains.Annotations" PrivateAssets="all"/>
+        <PackageReference Include="Fluid.Core" />
+        <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" />
 
         <ProjectReference Include="../src/YamlWarrior.Robust.csproj" />
+
+        <EmbeddedResource Include="templates/**" />
     </ItemGroup>
 </Project>

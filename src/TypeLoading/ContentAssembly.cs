@@ -23,8 +23,8 @@ public static class ContentAssembly {
     /// <param name="engine">Engine info</param>
     /// <param name="path">Assembly to extract</param>
     /// <param name="docs">XML documentation file for the given assembly</param>
-    public static AssemblyTypes ExtractYamlTypes(EngineAssemblies engine, string path, XElement? docs = null) {
-        var infos = new AssemblyTypes();
+    public static RobustAssemblyTypes ExtractYamlTypes(EngineAssemblies engine, string path, XElement? docs = null) {
+        var infos = new RobustAssemblyTypes();
 
         var asm = Assembly.LoadFrom(path);
 

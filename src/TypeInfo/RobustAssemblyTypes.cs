@@ -6,7 +6,7 @@ using YamlWarrior.Robust.TypeLoading;
 
 namespace YamlWarrior.Robust.TypeInfo;
 
-public sealed record AssemblyTypes {
+public sealed record RobustAssemblyTypes {
     /// <summary>
     /// Map of KindId to Prototype
     /// </summary>
@@ -22,8 +22,8 @@ public sealed record AssemblyTypes {
     /// </summary>
     public Dictionary<string, ComponentInfo> Components { get; init; } = new();
 
-    public static AssemblyTypes Merge(AssemblyTypes lhs, AssemblyTypes rhs) {
-        var joined = new AssemblyTypes {
+    public static RobustAssemblyTypes Merge(RobustAssemblyTypes lhs, RobustAssemblyTypes rhs) {
+        var joined = new RobustAssemblyTypes {
             Prototypes = new Dictionary<string, PrototypeInfo>(lhs.Prototypes),
             DataDefinitions = new Dictionary<string, DataDefinitionInfo>(lhs.DataDefinitions),
             Components = new Dictionary<string, ComponentInfo>(lhs.Components),
