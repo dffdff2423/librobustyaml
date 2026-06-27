@@ -37,4 +37,9 @@ public record DataDefinitionInfo {
     /// Member data fields
     /// </summary>
     public DataFieldInfo[] DataFields { get; init; } = [];
+
+    /// <summary>
+    /// The full name of this type's super class
+    /// </summary>
+    public string? SuperTypeFullName { get; init; }
 }

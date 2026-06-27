@@ -14,7 +14,7 @@ namespace YamlWarrior.Robust.TypeLoading;
 
 /// <summary>
 /// Operations on Content assemblies. Note that we consider any assembly which we parse DataDefinitions from a content
-/// assembly. Even ones inside engine code.
+/// assembly, including ones inside engine code.
 /// </summary>
 public static class ContentAssembly {
     /// <summary>
@@ -41,7 +41,7 @@ public static class ContentAssembly {
             Debug.Assert(!ty.ContainsGenericParameters);
             Debug.Assert(ty.FullName != null);
 
-            var idField = ty.GetProperties() .SingleOrDefault(p => p.GetCustomAttribute(engine.IdDataFieldAttribute) != null);
+            var idField = ty.GetProperties().SingleOrDefault(p => p.GetCustomAttribute(engine.IdDataFieldAttribute) != null);
             var parentField = ty.GetProperties().SingleOrDefault(p => p.GetCustomAttribute(engine.ParentDataFieldAttribute) != null);
             var abstractField = ty.GetProperties().SingleOrDefault(p => p.GetCustomAttribute(engine.AbstractDataFieldAttribute) != null);
 
@@ -59,13 +59,21 @@ public static class ContentAssembly {
                 DocsString = docElem?.ToString(),
                 DataFields = fields,
                 SupportsInheritance = ty.ImplementsInterface(engine.IInheritingPrototype),
+                SuperTypeFullName = ty.BaseType?.FullName,
             });
         }
 
         // I know this is needlessly iterating types an unneeded number of times but this is fast enough for this and makes the code easier to follow
         foreach (var ty in types) {
             var ddAttr = ty.GetCustomAttribute(engine.DataDefinitionAttribute);
-            if (ddAttr == null)
+            var superClass = ty.BaseType;
+            var superMddAttr = superClass?.GetCustomAttribute(engine.MeansDataDefinitionAttribute);
+            // Treat MDDs as DDs to maintain class hierarchy
+            var mddAttr = ty.GetCustomAttribute(engine.MeansDataDefinitionAttribute);
+
+            if (ddAttr == null && mddAttr == null && superMddAttr == null)
+                continue;
+            if (superClass == engine.Component) // We handle components below
                 continue;
 
             // DDs should not be generic
@@ -81,6 +89,7 @@ public static class ContentAssembly {
                 DataFields = fields,
                 Docs = docElem,
                 DocsString = docElem?.ToString(),
+                SuperTypeFullName = ty.BaseType?.FullName,
             });
         }
 
@@ -102,18 +111,20 @@ public static class ContentAssembly {
                 DataFields = fields,
                 Docs = docElem,
                 DocsString = docElem?.ToString(),
+                SuperTypeFullName = ty.BaseType?.FullName,
             });
         }
 
         foreach (var ty in types) {
             var rcAttr =  ty.GetCustomAttribute(engine.RegisterComponentAttribute);
-            if (rcAttr == null)
+            var superClass = ty.BaseType;
+            if (rcAttr == null && superClass != engine.Component)
                 continue;
             var cpAttr = ty.GetCustomAttribute(engine.ComponentProtoNameAttribute);
             var unsavedAttr = ty.GetCustomAttribute(engine.UnsavedComponentAttribute);
 
-            // DDs should not be generic
-            Debug.Assert(!ty.ContainsGenericParameters);
+            // DDs can be generic so long as they are not constructed
+            Debug.Assert(!ty.IsConstructedGenericType, $"Constructed Generic: {ty.FullName}");
             Debug.Assert(ty.FullName != null);
 
             var yamlName = ConvertComponentName(ty.Name);
@@ -125,14 +136,45 @@ public static class ContentAssembly {
 
             var docElem = docs != null ? GetTypeDocs(docs, ty.FullName) : null;
 
-            infos.Components.Add(ty.FullName, new ComponentInfo {
+            string? sharedName = null;
+            string? clientName = null;
+            string? serverName = null;
+            var predicted = false;
+            if (superClass != engine.Component || rcAttr == null) {
+                predicted = true;
+                switch (GuessComponentSide(ty.Name, asm.GetName().Name)) {
+                case ComponentSide.Shared:
+                    sharedName = ty.FullName;
+                    break;
+                case ComponentSide.Client:
+                    clientName = ty.FullName;
+                    break;
+                case ComponentSide.Server:
+                    serverName = ty.FullName;
+                    break;
+                default:
+                    throw new InvalidDataException("Unable to guess predicted component side");
+                }
+            }
+
+            var newComp = new ComponentInfo {
                 FullName = ty.FullName,
                 DataFields = fields,
                 Unsaved = unsavedAttr != null,
                 YamlName = yamlName,
                 Docs = docElem,
                 DocsString = docElem?.ToString(),
-            });
+                SuperTypeFullName = ty.BaseType?.FullName,
+                SharedFullName = sharedName,
+                ClientFullName = clientName,
+                ServerFullName = serverName,
+                Predicted = predicted,
+            };
+            if (infos.Components.TryGetValue(yamlName, out var oldComp)) {
+                infos.Components[yamlName] = MergePredictedComponents(oldComp, newComp);
+            } else {
+                infos.Components.Add(yamlName, newComp);
+            }
         }
         return infos;
     }
@@ -148,6 +190,60 @@ public static class ContentAssembly {
             .Concat(fields)
             .ToArray();
         return props;
+    }
+
+    /// <summary>
+    /// Merges two components that are sides or shared version of a predicted component and combines them into a single <see cref="ComponentInfo"/>
+    /// </summary>
+    /// <returns>The combined component</returns>
+    public static ComponentInfo MergePredictedComponents(ComponentInfo lhs, ComponentInfo rhs) {
+        // This merge logic supports predicted components which is why it is so ugly.
+        // Basically we want to combine them into a single component.
+
+        string? clientName = lhs.ClientFullName, serverName = lhs.ServerFullName, sharedName = lhs.SharedFullName;
+
+        clientName ??= rhs.ClientFullName;
+        serverName ??= rhs.ServerFullName;
+        sharedName ??= rhs.SharedFullName;
+
+        XElement? docs = null;
+        XElement? opposingDocs = null;
+        if (lhs.Docs?.Name == "mergedDocs") {
+            docs = lhs.Docs;
+            if (rhs.Docs != null) {
+                opposingDocs = new XElement(GetComponentSideForMerging(rhs).ToString(), rhs.Docs.Elements());
+            }
+        } else if (rhs.Docs?.Name == "mergedDocs") {
+            docs = rhs.Docs;
+            if (lhs.Docs != null) {
+                opposingDocs = new XElement(GetComponentSideForMerging(lhs).ToString(), lhs.Docs.Elements());
+            }
+        } else {
+            XElement? lhsDocs = null;
+            XElement? rhsDocs = null;
+            if (lhs.Docs != null)
+                lhsDocs = new XElement(GetComponentSideForMerging(lhs).ToString(), lhs.Docs.Elements());
+            if (rhs.Docs != null)
+                rhsDocs =  new XElement(GetComponentSideForMerging(rhs).ToString(), rhs.Docs.Elements());
+            if (lhsDocs != null || rhsDocs != null) {
+                docs = new XElement("mergedDocs", lhsDocs);
+                opposingDocs = rhsDocs;
+            }
+        }
+        docs = new XElement("mergedDocs", docs?.Elements(), opposingDocs);
+
+        return new ComponentInfo {
+            Predicted = true,
+            FullName = "PREDICTED COMPONENT. DO NOT USE THE FullName FIELD. IF YOU SEE THIS AS A USER IT IS A BUG.",
+            DataFields = lhs.DataFields.Concat(rhs.DataFields).ToArray(),
+            YamlName = lhs.YamlName,
+            Unsaved = lhs.Unsaved,
+            ClientFullName = clientName,
+            ServerFullName = serverName,
+            SharedFullName = sharedName,
+            Docs = docs,
+            DocsString = docs?.ToString(),
+        };
     }
 
     [Pure]
@@ -169,7 +265,7 @@ public static class ContentAssembly {
         Debug.Assert(type.FullName != null);
 
         var owner = prop.DeclaringType?.FullName ?? throw new InvalidDataException("DataField property does not have owner");
-        var docElem = docs != null ? GetPropertyDocs(docs, owner, prop.Name) : null;
+        var docElem = docs != null ? GetPropOrFieldDocs(docs, owner, prop) : null;
 
         return new DataFieldInfo {
             TypeName = type.FullName,
@@ -199,12 +295,26 @@ public static class ContentAssembly {
             ?.Elements()
             .SingleOrDefault(el => el.Attribute("name")?.Value == "T:" + typeName);
 
+    private static XElement? GetPropOrFieldDocs(XElement docs, string parent, MemberInfo prop) {
+        return prop.MemberType switch {
+            MemberTypes.Field => GetFieldDocs(docs, parent, prop.Name),
+            MemberTypes.Property => GetPropDocs(docs, parent, prop.Name),
+            _ => throw new ArgumentException($"{prop.MemberType} is not a property or a field"),
+        };
+    }
     [Pure]
-    private static XElement? GetPropertyDocs(XElement docs, string typeName, string propName)
+    private static XElement? GetFieldDocs(XElement docs, string typeName, string propName)
         => docs
             .Element("members")
             ?.Elements()
-            .SingleOrDefault(el => el.Attribute("name")?.Value == "F:" + typeName + propName);
+            .SingleOrDefault(el => el.Attribute("name")?.Value == "F:" + typeName + "." + propName);
+
+    [Pure]
+    private static XElement? GetPropDocs(XElement docs, string typeName, string propName)
+        => docs
+            .Element("members")
+            ?.Elements()
+            .SingleOrDefault(el => el.Attribute("name")?.Value == "P:" + typeName + "." + propName);
 
     [Pure]
     private static string ConvertTypeNameToPrototypeKindId(string str) {
@@ -233,9 +343,70 @@ public static class ContentAssembly {
         // SPDX-SnippetEnd
     }
 
+    [Pure]
+    private static ComponentSide GuessComponentSide(string typeName, string? asmName) {
+        const string client = "Client";
+        const string server = "Server";
+        const string shared = "Shared";
+
+        if (typeName.StartsWith(client, StringComparison.Ordinal)) {
+            return ComponentSide.Client;
+        }
+        if (typeName.StartsWith(server, StringComparison.Ordinal)) {
+            return ComponentSide.Server;
+        }
+        if (typeName.StartsWith(shared, StringComparison.Ordinal)) {
+            return ComponentSide.Shared;
+        }
+
+        return asmName switch {
+            "Content.Client" => ComponentSide.Client,
+            "Content.Server" => ComponentSide.Server,
+            "Content.Shared" => ComponentSide.Shared,
+            "Robust.Client" => ComponentSide.Client,
+            "Robust.Server" => ComponentSide.Server,
+            "Robust.Shared" => ComponentSide.Shared,
+
+            _ => ComponentSide.Unknown,
+        };
+    }
+
+    [Pure]
+    private static ComponentSide GetComponentSideForMerging(ComponentInfo info) {
+        Debug.Assert(info.Predicted);
+
+        if (info.ServerFullName != null) {
+            Debug.Assert(info.ClientFullName == null);
+            Debug.Assert(info.SharedFullName == null);
+            return ComponentSide.Server;
+        }
+
+        if (info.ClientFullName != null) {
+            Debug.Assert(info.SharedFullName == null);
+            Debug.Assert(info.ServerFullName == null);
+            return ComponentSide.Client;
+        }
+
+        if (info.SharedFullName != null) {
+            Debug.Assert(info.ClientFullName == null);
+            Debug.Assert(info.ServerFullName == null);
+            return ComponentSide.Server;
+        }
+
+        return ComponentSide.Unknown;
+    }
+
+    private enum ComponentSide {
+        Shared,
+        Client,
+        Server,
+        Unknown,
+    }
+
     /// <summary>
     /// Based on RT ComponentFactory.CalculateComponentName
     /// </summary>
+    [Pure]
     private static string ConvertComponentName(string typeName)
     {
         // Taken from RT, slightly modified by aquif for librobustyaml
@@ -243,8 +414,7 @@ public static class ContentAssembly {
         // SPDX-SnippetCopyrightText: Copyright (c) 2017-2026 Space Wizards Federation
         // SPDX-License-Identifier: MIT
         const string component = "Component";
-        if (!typeName.EndsWith(component))
-        {
+        if (!typeName.EndsWith(component)) {
             return typeName;
 
             // RT throws here, we don't just to be a bit graceful.
@@ -255,16 +425,13 @@ public static class ContentAssembly {
         const string client = "Client";
         const string server = "Server";
         const string shared = "Shared";
-        if (typeName.StartsWith(client, StringComparison.Ordinal))
-        {
+        if (typeName.StartsWith(client, StringComparison.Ordinal)) {
             name = typeName[client.Length..^component.Length];
         }
-        else if (typeName.StartsWith(server, StringComparison.Ordinal))
-        {
+        else if (typeName.StartsWith(server, StringComparison.Ordinal)) {
             name = typeName[server.Length..^component.Length];
         }
-        else if (typeName.StartsWith(shared, StringComparison.Ordinal))
-        {
+        else if (typeName.StartsWith(shared, StringComparison.Ordinal)) {
             name = typeName[shared.Length..^component.Length];
         }
         Debug.Assert(name != String.Empty, $"Component {typeName} has invalid name");

@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
+using YamlWarrior.Robust.TypeLoading;
+
 namespace YamlWarrior.Robust.TypeInfo;
 
 public sealed record AssemblyTypes {
@@ -39,10 +41,24 @@ public sealed record AssemblyTypes {
             }
         }
 
-        foreach (var (kind, comp) in rhs.Components) {
-            if (!joined.Components.TryAdd(kind, comp)) {
-                // TODO: Support predicted components
-                throw new Exception("Duplicate kind: " + kind);
+        foreach (var (kind, newComp) in rhs.Components) {
+            if (joined.Components.TryGetValue(kind, out var oldComp)) {
+                if (!newComp.Predicted && !oldComp.Predicted) {
+                    // TODO: Sometimes the client and server have the exact same component with the same name. But they do not form a
+                    //       predicted component hierarchy. For now, we will just store the server component since I still need to check
+                    //       if client components are even relevant at all for yaml parsing. RadiationCollectorComponent is an example of this
+
+                    // This code should be fine since it should be illegal RegisterComponent on shared components
+                    if (newComp.FullName.Contains("Server")) {
+                        joined.Components[kind] = newComp;
+                    } else {
+                        joined.Components[kind] = oldComp;
+                    }
+                } else {
+                    joined.Components[kind] = ContentAssembly.MergePredictedComponents(oldComp, newComp);
+                }
+            } else {
+                joined.Components.Add(kind, newComp);
             }
         }
 

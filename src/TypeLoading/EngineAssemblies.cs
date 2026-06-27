@@ -35,7 +35,9 @@ public sealed class EngineAssemblies {
 
     public readonly Type DataDefinitionAttribute;
     public readonly Type DataRecordAttribute;
+    public readonly Type MeansDataDefinitionAttribute;
 
+    public readonly Type Component;
     public readonly Type RegisterComponentAttribute;
     public readonly Type ComponentProtoNameAttribute;
     public readonly PropertyInfo ComponentProtoNameAttributePrototypeNameProperty;
@@ -65,7 +67,9 @@ public sealed class EngineAssemblies {
 
         DataDefinitionAttribute = shared.GetType(RobustNames.DataDefinitionAttribute) ?? throw new InvalidDataException(sharedPath);
         DataRecordAttribute = shared.GetType(RobustNames.DataRecordAttribute) ?? throw new InvalidDataException(sharedPath);
+        MeansDataDefinitionAttribute = shared.GetType(RobustNames.MeansDataDefinitionAttribute) ?? throw new InvalidDataException(sharedPath);
 
+        Component = shared.GetType(RobustNames.Component) ?? throw new InvalidDataException(sharedPath);
         RegisterComponentAttribute = shared.GetType(RobustNames.RegisterComponentAttribute) ?? throw new InvalidDataException(sharedPath);
         ComponentProtoNameAttribute = shared.GetType(RobustNames.ComponentProtoNameAttribute) ?? throw new InvalidDataException(sharedPath);
         ComponentProtoNameAttributePrototypeNameProperty = ComponentProtoNameAttribute.GetProperty("PrototypeName") ?? throw new InvalidDataException(sharedPath);
