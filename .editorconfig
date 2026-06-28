@@ -49,3 +49,6 @@ resharper_csharp_trailing_comma_in_multiline_lists = true
 resharper_csharp_qualified_using_at_nested_scope = false
 resharper_csharp_prefer_qualified_reference = false
 resharper_csharp_allow_alias = false
+
+[*.yml]
+indent_size = 2
