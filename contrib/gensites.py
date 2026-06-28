@@ -11,10 +11,11 @@ from pathlib import Path
 ROOT = Path.cwd();
 
 projects = {
-    "funky": "funky-station/forky-station",
-    "starlight": "ss14Starlight/space-station-14",
     "cd": "cosmatic-drift-14/cosmatic-drift",
     "deltav": "DeltaV-Station/Delta-v",
+    "funky": "funky-station/forky-station",
+    "macrocosm": "syndicate-ss14/macrocosm",
+    "starlight": "ss14Starlight/space-station-14",
     "wizden": "space-wizards/space-station-14",
 };
 
