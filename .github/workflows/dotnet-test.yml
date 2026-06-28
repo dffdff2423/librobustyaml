@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 dffdff2423 <dffdff2423@gmail.com>
+#
+# SPDX-License-Identifier: GPL-3.0-only
+
+name: dotnet test
+
+on: [ push ]
+
+jobs:
+  dotnet-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Build all projects
+      run: dotnet build
+
+    - name: Test
+      run: dotnet test

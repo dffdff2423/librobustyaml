@@ -33,7 +33,7 @@ public sealed class BasicTypeNameTest {
     public void Parse_unparamaterized_generic() {
         var ty = new CSharpTypeName("My.Generic`2");
         using (Assert.EnterMultipleScope()) {
-            Assert.That(ty.TypePath, Is.EqualTo("My.Generic`2"));
+            Assert.That(ty.TypePath, Is.EqualTo("My.Generic"));
             Assert.That(ty.IsArray, Is.False);
             Assert.That(ty.NumGenerics, Is.EqualTo(2));
             Assert.That(ty.GenericParameters, Is.Null);
@@ -45,7 +45,7 @@ public sealed class BasicTypeNameTest {
         var ty = new CSharpTypeName(
             "System.Collections.Generic.Dictionary`2[[System.String, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]");
         using (Assert.EnterMultipleScope()) {
-            Assert.That(ty.TypePath, Is.EqualTo("System.Collections.Generic.Dictionary`2"));
+            Assert.That(ty.TypePath, Is.EqualTo("System.Collections.Generic.Dictionary"));
             Assert.That(ty.IsArray, Is.False);
             Assert.That(ty.NumGenerics, Is.EqualTo(2));
             Assert.That(ty.GenericParameters,

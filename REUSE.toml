@@ -11,5 +11,10 @@ SPDX-License-Identifier = "GPL-3.0-only" # So I don't have to add an extra licen
 
 [[annotations]]
 path = [ "README.md" ]
-SPDX-FileCopyrightText = "(C) dffdff2423 <dffdff2423@gmail.com>"
+SPDX-FileCopyrightText = "(C) 2026 dffdff2423 <dffdff2423@gmail.com>"
+SPDX-License-Identifier = "GPL-3.0-only" # So I don't have to add an extra license file
+
+[[annotations]]
+path = [ "contrib/README.txt" ]
+SPDX-FileCopyrightText = "(C) 2026 dffdff2423 <dffdff2423@gmail.com>"
 SPDX-License-Identifier = "GPL-3.0-only" # So I don't have to add an extra license file
