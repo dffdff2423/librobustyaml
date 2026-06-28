@@ -7,4 +7,5 @@
 <Solution>
   <Project Path="src/YamlWarrior.Robust.csproj" />
   <Project Path="yamldocs/Yamldocs.csproj" />
+  <Project Path="test/YamlWarrior.Robust.Tests.csproj" />
 </Solution>

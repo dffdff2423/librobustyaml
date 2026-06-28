@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
+using System.Diagnostics;
+using System.Net;
 using System.Text;
-using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Xml.Linq;
 
@@ -15,6 +16,7 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.FileProviders;
 
 using YamlWarrior.Robust;
+using YamlWarrior.Robust.Utilities;
 
 namespace Yamldocs;
 
@@ -38,14 +40,17 @@ public static class SiteGenerator {
     }
 
     public static void Generate(Parameters opts) {
-        var parser = new FluidParser();
+        var parser = new FluidParser(new FluidParserOptions {
+            AllowFunctions = true,
+        });
         var ctx = new TemplateContext {
             Options = {
                 MemberAccessStrategy = new UnsafeMemberAccessStrategy(),
                 FileProvider = ResourceProvider,
             },
         };
-        ctx.Options.Filters.AddFilter("doc_summerize", DocSummerize);
+        ctx.Options.Filters.AddFilter("format_docs", FormatDocs);
+        ctx.Options.Filters.AddFilter("format_type_name", FormatTypeName);
 
         var generatorVersion = typeof(SiteGenerator).Assembly.GetName().Version;
         var rtYamlVersion = typeof(YamlProcessingContext).Assembly.GetName().Version;
@@ -68,17 +73,27 @@ public static class SiteGenerator {
 
         ctx.SetValue("type_info", opts.Yaml.RobustTypes);
 
-        var index = GetTemplate(parser, "index.liquid");
-        var indexTxt = index.Render(ctx);
 
         var output = opts.GhSlug != null ? Path.Combine(opts.OutputPath, opts.GhSlug) : opts.OutputPath;
         Directory.CreateDirectory(output);
 
+        var index = GetTemplate(parser, "index.liquid");
+        var indexTxt = index.Render(ctx);
         File.WriteAllText(Path.Combine(output, "index.html"), indexTxt);
+
+        var baseType = GetTemplate(parser, "basic-types.liquid");
+        var baseTypeTxt = baseType.Render(ctx);
+        File.WriteAllText(Path.Combine(output, "basic-types.html"), baseTypeTxt);
+
+        var proto = GetTemplate(parser, "prototype.liquid");
+        foreach (var (kind, ty) in opts.Yaml.RobustTypes.Prototypes) {
+            ctx.SetValue("curr_ty", ty);
+            var txt = proto.Render(ctx);
+            File.WriteAllText(Path.Combine(output, $"{kind}.html"), txt);
+        }
 
         var jsonTxt = JsonSerializer.Serialize(opts.Yaml.RobustTypes, new JsonSerializerOptions {
                 WriteIndented = true,
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
             });
         File.WriteAllText(Path.Combine(output, "types.json"), jsonTxt);
 
@@ -93,13 +108,13 @@ public static class SiteGenerator {
     }
 
     [Pure]
-    private static ValueTask<FluidValue> DocSummerize(FluidValue input, FilterArguments filter, TemplateContext ctx) {
+    private static ValueTask<FluidValue> FormatDocs(FluidValue input, FilterArguments filter, TemplateContext ctx) {
         if (input.IsNil())
             return EmptyValue.Instance;
         if (input.ToObjectValue() is not XElement el)
             throw new ArgumentException("Input must be XElement", nameof(input));
         if (el.Name == "member") {
-            return new StringValue(el.Element("summary")?.Value ?? "");
+            return  new StringValue(HtmlifyCsharpDocComment(el).ToString());
         }
 
         if (el.Name == "mergedDocs") {
@@ -110,7 +125,7 @@ public static class SiteGenerator {
                 var sum = client.Element("summary");
                 if (sum != null) {
                     outEl.Add(new XElement("h4", "Client"));
-                    outEl.Add(sum.Value);
+                    outEl.Add(HtmlifyCsharpDocComment(sum));
                 }
             }
 
@@ -119,7 +134,7 @@ public static class SiteGenerator {
                 var sum = server.Element("summary");
                 if (sum != null) {
                     outEl.Add(new XElement("h4", "Server"));
-                    outEl.Add(sum.Value);
+                    outEl.Add(HtmlifyCsharpDocComment(sum));
                 }
             }
 
@@ -128,7 +143,7 @@ public static class SiteGenerator {
                 var sum = shared.Element("summary");
                 if (sum != null) {
                     outEl.Add(new XElement("h4", "Shared"));
-                    outEl.Add(shared.Value);
+                    outEl.Add(HtmlifyCsharpDocComment(sum));
                 }
             }
 
@@ -140,5 +155,168 @@ public static class SiteGenerator {
         }
 
         throw new ArgumentException($"Input must be documentation XElement. Got {el}", nameof(input));
+    }
+
+    private static XElement HtmlifyCsharpDocComment(XElement el) {
+        return new XElement("p",
+            el
+                .Nodes()
+                .Select(node =>
+                    node is XElement child ? HtmlifyElement(child) : node));
+    }
+
+    private static XElement HtmlifyElement(XElement el) {
+        // All ye who enter here abandon hope. Nobody formats their documentation comments correctly so we just map them
+        // to something that should look somewhat okay in HTML and call it good enough.
+        switch (el.Name.LocalName) {
+        case "b":
+        case "i":
+        case "u":
+        case "br":
+        case "pre": // I don't think this one actually is allowed but wizden uses it anyways
+            return el;
+        case "c":
+            return new XElement("span", new XElement("class", "inlinecode"), HtmlifyNodes(el.Nodes()));
+        case "para":
+            return new XElement("p", HtmlifyNodes(el.Nodes()));
+        case "summary":
+            return new XElement("div", HtmlifyNodes(el.Nodes()));
+        case "example":
+            return new XElement("div",
+                new XElement("h4", "Example"),
+                HtmlifyNodes(el.Nodes()));
+        case "remarks":
+            return new XElement("div",
+                new XElement("h4", "Remarks"),
+                HtmlifyNodes(el.Nodes()));
+        case "seealso":
+            var tyalso = el.Attribute("cref");
+            // if (tyalso == null) {
+            //     return new XElement("em", "MISSING CREF");
+            // }
+            return new XElement("p", "See Also: ", new XElement("a", new XAttribute("href", HtmlifySeeCref(tyalso!.Value)), tyalso.Value));
+        case "see":
+            var ty = el.Attribute("cref");
+            // if (ty == null) { // Wizden has at least one broken cref
+            //     return new XElement("em", "MISSING CREF");
+            // }
+            Debug.Assert(!el.HasElements);
+            return new XElement("a", new XAttribute("href", HtmlifySeeCref(ty!.Value)), ty.Value);
+        case "typeparam":
+            var name = el.Attribute("name");
+            if (name != null) {
+                return new XElement("p", $"Type Parameter <strong>{name.Value}</strong>: ", HtmlifyNodes(el.Nodes()));
+            }
+
+            return new XElement("p", "Type Parameter: ", HtmlifyNodes(el.Nodes()));
+        case "code":
+            return new XElement("pre", new XAttribute("class", "boxed"), HtmlifyNodes(el.Nodes()));
+        case "inheridoc": // This is something incorrect that wizden uses at least once. Probably should send a PR to fix it.
+        case "inheritdoc":
+            return new XElement("p", "Docmentation inherited from superclass. The generator does not support this right now.");
+        default:
+            // I only bothered to implment the elements RT actually uses
+            throw new NotSupportedException($"Input {el.Name} is not supported. This is probably an issue in yamldocs/librobustyaml");
+        }
+    }
+
+    private static List<XNode> HtmlifyNodes(IEnumerable<XNode> nodes) {
+        var result = new List<XNode>();
+        foreach (var node in nodes) {
+            if (node is XElement el) {
+                result.Add(HtmlifyElement(el));
+            } else {
+                result.Add(node);
+            }
+        }
+        return result;
+    }
+
+
+    private static string HtmlifySeeCref(string cref) {
+        return "./todo.html";
+    }
+
+    [Pure]
+    private static ValueTask<FluidValue> FormatTypeName(FluidValue input, FilterArguments filter, TemplateContext ctx) {
+        var istr = input.ToStringValue();
+        if (istr == null)
+            throw new ArgumentException("Input must be a string", nameof(input));
+        var ty = new CSharpTypeName(istr);
+
+        return new StringValue(FormatTypeNameInternal(ty));
+    }
+
+    [Pure] private static string FormatTypeNameInternal(CSharpTypeName ty) {
+        var tyPathUrl = $"./{WebUtility.UrlEncode(ty.TypePath)}.html";
+        var tyPathHtml = WebUtility.HtmlEncode(ty.TypePath);
+
+        // Special cases
+        switch (ty.TypePath) {
+        case "System.String":
+            tyPathHtml = "string";
+            tyPathUrl = "./basic-types.html#string";
+            break;
+        case "System.Int64":
+        case "System.Int32":
+        case "System.Int16":
+            tyPathHtml = "integer" + ty.TypePath[^2..];
+            tyPathUrl = "./basic-types.html#integer";
+            break;
+        case "System.Byte":
+            tyPathHtml = "integer8";
+            tyPathUrl = "./basic-types.html#integer";
+            break;
+        case "System.Boolean":
+            tyPathHtml = "bool";
+            tyPathUrl = "./basic-types.html#bool";
+            break;
+        case "System.Single":
+        case "System.Double":
+            tyPathHtml = "real";
+            tyPathUrl = "./basic-types.html#real";
+            break;
+        case "System.Numerics.Vector2":
+        case "System.Numerics.Vector3":
+        case "System.Numerics.Vector4":
+            tyPathHtml = "Vector" + ty.TypePath[^1..];
+            tyPathUrl = "./basic-types.html#vector";
+            break;
+        case "Content.Shared.FixedPoint.FixedPoint2":
+        case "Content.Shared.FixedPoint.FixedPoint4":
+            tyPathHtml = "FixedPoint" + ty.TypePath[^1..];
+            tyPathUrl = "./basic-types.html#real";
+            break;
+        case "System.Collections.Generic.Dictionary":
+            tyPathHtml = "Dictionary";
+            tyPathUrl = "./basic-types.html#dict";
+            break;
+        case "System.Collections.Generic.List":
+            // We do a bit of lying
+            return FormatTypeNameInternal(ty.GenericParameters![0]) + "[]";
+        case "Robust.Shared.Prototypes.ComponentRegistry":
+            tyPathHtml = "IComponent[]";
+            tyPathUrl = "./basic-types.html#component-registry";
+            break;
+        }
+
+        var genNum = ty.NumGenerics != 0 ? $"`{ty.NumGenerics}" : string.Empty;
+
+        var genVal = ty.GenericParameters
+            ?.Select(FormatTypeNameInternal)
+            .Aggregate(string.Empty, (s0, s1) =>  s1 + ", " + s0)
+            ?? string.Empty;
+        if (genVal != string.Empty) {
+            genVal = $"&lt;{genVal[..^2]}&gt;";
+            genNum = string.Empty;
+        }
+
+        if (genVal != string.Empty) {
+            Debug.Write("Break me");
+        }
+
+        var array = ty.IsArray ? "[]" : string.Empty;
+
+        return $"<a href=\"{tyPathUrl}\" >{tyPathHtml}</a>{genNum}{genVal}{array}";
     }
 }

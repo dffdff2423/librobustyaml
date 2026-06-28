@@ -1,0 +1,30 @@
+﻿<!--
+  SPDX-FileCopyrightText: (C) 2026 dffdff2423 <dffdff2423@gmail.com>
+
+  SPDX-License-Identifier: GPL-3.0-only
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <RootNamespace>tests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="NUnit" />
+        <PackageReference Include="NUnit.Analyzers" />
+        <PackageReference Include="NUnit3TestAdapter" />
+
+        <ProjectReference Include="../src/YamlWarrior.Robust.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="NUnit.Framework"/>
+    </ItemGroup>
+
+</Project>

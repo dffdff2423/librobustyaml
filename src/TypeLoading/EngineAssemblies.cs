@@ -35,7 +35,7 @@ public sealed class EngineAssemblies {
 
     public readonly Type DataDefinitionAttribute;
     public readonly Type DataRecordAttribute;
-    public readonly Type MeansDataDefinitionAttribute;
+    public readonly Type ImplicitDataDefinitionForInheritorsAttribute;
 
     public readonly Type Component;
     public readonly Type RegisterComponentAttribute;
@@ -67,7 +67,7 @@ public sealed class EngineAssemblies {
 
         DataDefinitionAttribute = shared.GetType(RobustNames.DataDefinitionAttribute) ?? throw new InvalidDataException(sharedPath);
         DataRecordAttribute = shared.GetType(RobustNames.DataRecordAttribute) ?? throw new InvalidDataException(sharedPath);
-        MeansDataDefinitionAttribute = shared.GetType(RobustNames.MeansDataDefinitionAttribute) ?? throw new InvalidDataException(sharedPath);
+        ImplicitDataDefinitionForInheritorsAttribute = shared.GetType(RobustNames.ImplicitDataDefinitionForInheritorsAttribute) ?? throw new InvalidDataException(sharedPath);
 
         Component = shared.GetType(RobustNames.Component) ?? throw new InvalidDataException(sharedPath);
         RegisterComponentAttribute = shared.GetType(RobustNames.RegisterComponentAttribute) ?? throw new InvalidDataException(sharedPath);

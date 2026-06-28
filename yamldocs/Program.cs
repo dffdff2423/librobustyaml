@@ -39,7 +39,7 @@ internal static class Program {
         if (opts.ContainsKey("dump")) {
             Console.WriteLine(JsonSerializer.Serialize(yamlCtx.RobustTypes, new JsonSerializerOptions {
                 WriteIndented = true,
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             }));
             Environment.Exit(0);
         }

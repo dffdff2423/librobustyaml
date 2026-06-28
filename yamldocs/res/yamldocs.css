@@ -43,3 +43,23 @@ a:visited {
     padding: 1em;
     margin: 1em;
 }
+
+.yaml-type li:not(:first-child) {
+    list-style: none;
+}
+
+.required {
+    font-weight: bold;
+}
+
+.optional {
+    font-style: italic;
+}
+
+.docs {
+    margin-top: 1em;
+    margin-left: 1em;
+    margin-bottom: 0.25em;
+    font-style: italic;
+    color: var(--secondary-text-color);
+}

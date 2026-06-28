@@ -12,11 +12,10 @@
     <ItemGroup>
         <PackageVersion Include="JetBrains.Annotations" Version="2025.2.0" />
 
-        <!-- Currently yamldocs is the test for this library rather than a traditional dotnet test suite  -->
-<!--        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.0"/>-->
-<!--        <PackageVersion Include="NUnit" Version="4.3.2"/>-->
-<!--        <PackageVersion Include="NUnit.Analyzers" Version="4.7.0"/>-->
-<!--        <PackageVersion Include="NUnit3TestAdapter" Version="5.0.0"/>-->
+        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.0"/>
+        <PackageVersion Include="NUnit" Version="4.3.2"/>
+        <PackageVersion Include="NUnit.Analyzers" Version="4.7.0"/>
+        <PackageVersion Include="NUnit3TestAdapter" Version="5.0.0"/>
 
         <PackageVersion Include="Fluid.Core" Version="2.31.0" />
         <PackageVersion Include="Microsoft.Extensions.FileProviders.Embedded" Version="10.0.9" />

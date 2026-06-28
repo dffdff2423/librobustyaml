@@ -67,17 +67,17 @@ public static class ContentAssembly {
         foreach (var ty in types) {
             var ddAttr = ty.GetCustomAttribute(engine.DataDefinitionAttribute);
             var superClass = ty.BaseType;
-            var superMddAttr = superClass?.GetCustomAttribute(engine.MeansDataDefinitionAttribute);
-            // Treat MDDs as DDs to maintain class hierarchy
-            var mddAttr = ty.GetCustomAttribute(engine.MeansDataDefinitionAttribute);
+            var superDdiAttr = superClass?.GetCustomAttribute(engine.ImplicitDataDefinitionForInheritorsAttribute);
+            // Treat DDIss as DDs to maintain class hierarchy
+            var ddiAttr = ty.GetCustomAttribute(engine.ImplicitDataDefinitionForInheritorsAttribute);
 
-            if (ddAttr == null && mddAttr == null && superMddAttr == null)
+            if (ddAttr == null && ddiAttr == null && superDdiAttr == null)
                 continue;
             if (superClass == engine.Component) // We handle components below
                 continue;
 
-            // DDs should not be generic
-            Debug.Assert(!ty.ContainsGenericParameters);
+            // DDs can be generic but not contructed
+            Debug.Assert(!ty.IsConstructedGenericType, $"Constructed Generic: {ty.FullName}");
             Debug.Assert(ty.FullName != null);
 
             var fields = ExtractDataFields(engine, ty, docs, true);
@@ -98,7 +98,7 @@ public static class ContentAssembly {
             if (drAttr == null)
                 continue;
 
-            // DDs should not be generic
+            // DRs should not be generic
             Debug.Assert(!ty.ContainsGenericParameters);
             Debug.Assert(ty.FullName != null);
 
@@ -123,7 +123,7 @@ public static class ContentAssembly {
             var cpAttr = ty.GetCustomAttribute(engine.ComponentProtoNameAttribute);
             var unsavedAttr = ty.GetCustomAttribute(engine.UnsavedComponentAttribute);
 
-            // DDs can be generic so long as they are not constructed
+            // Comps should not be constructed generic
             Debug.Assert(!ty.IsConstructedGenericType, $"Constructed Generic: {ty.FullName}");
             Debug.Assert(ty.FullName != null);
 
@@ -317,7 +317,7 @@ public static class ContentAssembly {
             .SingleOrDefault(el => el.Attribute("name")?.Value == "P:" + typeName + "." + propName);
 
     [Pure]
-    private static string ConvertTypeNameToPrototypeKindId(string str) {
+    public static string ConvertTypeNameToPrototypeKindId(string str) {
         const string prototypeNameEnding = "Prototype";
 
         // Taken directly from RT: PrototypeUtility.CalculatePrototypeName
@@ -407,7 +407,7 @@ public static class ContentAssembly {
     /// Based on RT ComponentFactory.CalculateComponentName
     /// </summary>
     [Pure]
-    private static string ConvertComponentName(string typeName)
+    public static string ConvertComponentName(string typeName)
     {
         // Taken from RT, slightly modified by aquif for librobustyaml
         // SPDX-SnippetBegin

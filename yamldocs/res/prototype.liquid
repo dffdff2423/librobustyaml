@@ -1,0 +1,33 @@
+{% comment %}
+  SPDX-FileCopyrightText: (C) 2026 dffdff2423 <dffdff2423@gmail.com>
+
+  SPDX-License-Identifier: GPL-3.0-only
+{% endcomment %}
+<!DOCTYPE html>
+{% from "macros" import meta, fmt_data_field %}
+<html lang="en_us" >
+    {{ meta() }}
+
+{% if github_slug != blank %}
+    <title>{{ curr_ty.KindId }}: {{ github_slug }}</title>
+{%  else %}
+    <title>{{ curr_ty.KindId }}</title>
+{% endif %}
+<body>
+    <!--suppress HtmlUnknownTarget -->
+    <a href="./index.html">Return Home</a>
+
+    <h1>{{ curr_ty.KindId }}</h1>
+    <div class="docs" >{{ curr_ty.Docs | format_docs }}</div>
+    <ul class="yaml-type">
+        <li><span class="required">type</span>: {{ curr_ty.KindId }}</li>
+        {% for field in curr_ty.DataFields %}
+            {{ fmt_data_field(field) }}
+        {% endfor %}
+    </ul>
+
+<div class="boxed" >
+    This website uses <em>italics</em> to represent optional fields and <strong>bold</strong> to represent required fields. Some type names are simplified or clarified for easier reading.
+</div>
+</body>
+</html>

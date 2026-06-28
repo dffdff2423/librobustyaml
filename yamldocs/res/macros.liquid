@@ -1,0 +1,19 @@
+{% comment %}
+  SPDX-FileCopyrightText: (C) 2026 dffdff2423 <dffdff2423@gmail.com>
+
+  SPDX-License-Identifier: GPL-3.0-only
+{% endcomment %}
+{% macro fmt_data_field(df) %}
+    <div class="docs" >{{ df.Docs | format_docs }}</div>
+    {% if df.Required %}
+        <li><span class="required">{{ df.Tag }}</span>: {{ df.TypeName | format_type_name }}<li>
+    {% else %}
+        <li><span class="optional">{{ df.Tag }}</span>: {{ df.TypeName | format_type_name }}<li>
+    {% endif %}
+{% endmacro %}
+{% macro meta() %}
+    <meta http-equiv="content-type" content="text/html;charset=utf-8">
+    <meta name="generator" content="{{ generator_info }}" >
+
+    <link rel="stylesheet" href="./yamldocs.css" />
+{% endmacro %}

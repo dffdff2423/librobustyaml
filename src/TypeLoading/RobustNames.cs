@@ -24,7 +24,7 @@ public static class RobustNames {
 
     public const string DataDefinitionAttribute = "Robust.Shared.Serialization.Manager.Attributes.DataDefinitionAttribute";
     public const string DataRecordAttribute = "Robust.Shared.Serialization.Manager.Attributes.DataRecordAttribute";
-    public const string MeansDataDefinitionAttribute = "Robust.Shared.Serialization.Manager.Attributes.MeansDataDefinitionAttribute";
+    public const string ImplicitDataDefinitionForInheritorsAttribute = "Robust.Shared.Serialization.Manager.Attributes.ImplicitDataDefinitionForInheritorsAttribute";
 
     public const string Component = "Robust.Shared.GameObjects.Component";
     public const string RegisterComponentAttribute = "Robust.Shared.GameObjects.RegisterComponentAttribute";

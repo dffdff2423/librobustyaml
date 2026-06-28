@@ -1,0 +1,71 @@
+{% comment %}
+  SPDX-FileCopyrightText: (C) 2026 dffdff2423 <dffdff2423@gmail.com>
+
+  SPDX-License-Identifier: GPL-3.0-only
+{% endcomment %}
+{% from "macros" import meta %}
+<!DOCTYPE html>
+<html lang="en_us" >
+    {{ meta() }}
+
+    {% if github_slug != blank %}
+        <title>Builtins {{ github_slug }}</title>
+    {%  else %}
+        <title>Builtins</title>
+    {% endif %}
+<body>
+{% if github_slug != blank %}
+    <h1>Builtin Types </h1>
+{%  else %}
+    <h1>Robust Yaml documentation</h1>
+{% endif %}
+
+<h2 id="bool">bool</h2>
+<strong>true</strong> or <strong>false</strong>. Yaml also accepts a large number of non-sane values for booleans which can be a common "trap for young
+players". You should avoid using anything other than <strong>true</strong> or <strong>false</strong> if you want your code to be readable.
+
+<h2 id="integer">integer</h2>
+A non-decimal number. (eg. 1, 2, 3, -1, -3827). If it is suffixed with a number, the value can only support that many bits.
+
+<h2 id="real">real</h2>
+A decimal number. Single or double precision IEEE float or a SS14 FixedPoint value. Fixed point values only
+support their suffix number in decimal places
+
+<h2 id="vector">Vector</h2>
+A <a href="https://en.wikipedia.org/wiki/Vector_%28mathematics_and_physics%29">vector</a> composed of reals with the suffix number of components.
+
+<h2 id="string">string</h2>
+A stream of text characters. Typically unquoted in YAML. The following are valid examples of string values.
+<pre class="boxed" lang="yaml">
+  - string: My String
+    anotherString: "Another String"
+    blockString: |
+      You can write
+      long forms of text
+      like this
+</pre>
+
+<h2 id="array">array</h2>
+A list of items of a common type. A list of strings is given below:
+<pre class="boxed" lang="yaml">
+  - Item 1
+  - Item 2
+  - Item 3
+</pre>
+
+<h2 id="dict">Dictionary</h2>
+A mapping between two values. A map of strings to integers is given below.
+<pre class="boxed" lang="yaml">
+  one: 1
+  two: 2
+  three: 3
+</pre>
+
+<h2 id="component-registry" >IComponent[]</h2>
+A list of components. See <a href="./index.html#components" >the full list</a> of valid components
+<p>
+In the actual CSharp code this is a Robust.Shared.Prototypes.ComponentRegistry. However, for clarity we describe it here as a list of IComponent.
+</p>
+
+</body>
+</html>
