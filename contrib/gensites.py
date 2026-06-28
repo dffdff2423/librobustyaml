@@ -11,9 +11,11 @@ from pathlib import Path
 ROOT = Path.cwd();
 
 projects = {
-    "wizden": "space-wizards/space-station-14",
-    "deltav": "DeltaV-Station/Delta-v",
+    "funky": "funky-station/forky-station",
+    "starlight": "ss14Starlight/space-station-14",
     "cd": "cosmatic-drift-14/cosmatic-drift",
+    "deltav": "DeltaV-Station/Delta-v",
+    "wizden": "space-wizards/space-station-14",
 };
 
 yamldocs = ROOT / "bin" / "Yamldocs" / "net10.0" / "Yamldocs";

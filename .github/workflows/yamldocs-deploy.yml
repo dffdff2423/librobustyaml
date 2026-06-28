@@ -44,7 +44,7 @@ jobs:
         PRIVATE_KEY: ${{ secrets.NOTASLUG_YAMLDOCS_KEY }}
 
     - name: Deploy site
-      run: rsync -ravzc -e "ssh -i ~/.ssh/id_ed25519" ./outdir yamldocs@$DEPLOY_SERVER/site
+      run: rsync -ravzc -e "ssh -i ~/.ssh/id_ed25519" ./outsite yamldocs@$DEPLOY_SERVER/site
       shell: bash
       env:
         DEPLOY_SERVER: notaslug.org:${{ secrets.NOTASLUG_YAMLDOCS_PATH }}
