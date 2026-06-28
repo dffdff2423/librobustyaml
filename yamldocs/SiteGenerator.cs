@@ -253,6 +253,7 @@ public static class SiteGenerator {
             return new XElement("div",
                 new XElement("h4", "Remarks"),
                 HtmlifyNodes(el.Nodes()));
+        case "seelso": // Typo in delta-v
         case "seealso":
             var tyalso = el.Attribute("cref");
             // if (tyalso == null) {
