@@ -63,12 +63,15 @@ public static class SiteGenerator {
         dds.Sort();
         var comps = opts.Yaml.RobustTypes.Components.Keys.ToArray();
         comps.Sort();
+        var sers = opts.Yaml.RobustTypes.Serializables.Keys.ToArray();
+        sers.Sort();
 
         ctx.SetValue("asm_types",
             new Dictionary<string, string[]> {
                 ["Prototypes"] = protos,
                 ["DataDefs"] = dds,
                 ["Components"] = comps,
+                ["Serializables"] = sers,
             });
 
         ctx.SetValue("type_info", opts.Yaml.RobustTypes);
@@ -138,6 +141,13 @@ public static class SiteGenerator {
         foreach (var (path, ty) in opts.Yaml.RobustTypes.DataDefinitions) {
             ctx.SetValue("curr_ty", ty);
             var txt = datadef.Render(ctx);
+            File.WriteAllText(Path.Combine(output, $"{path}.html"), txt);
+        }
+
+        var serializable = GetTemplate(parser, "serializable.liquid");
+        foreach (var (path, ty) in opts.Yaml.RobustTypes.Serializables) {
+            ctx.SetValue("curr_ty", ty);
+            var txt = serializable.Render(ctx);
             File.WriteAllText(Path.Combine(output, $"{path}.html"), txt);
         }
 
@@ -226,7 +236,7 @@ public static class SiteGenerator {
         case "pre": // I don't think this one actually is allowed but wizden uses it anyways
             return el;
         case "c":
-            return new XElement("span", new XElement("class", "inlinecode"), HtmlifyNodes(el.Nodes()));
+            return new XElement("span", new XAttribute("class", "inlinecode"), HtmlifyNodes(el.Nodes()));
         case "para":
             return new XElement("p", HtmlifyNodes(el.Nodes()));
         case "summary":
@@ -244,11 +254,12 @@ public static class SiteGenerator {
             // if (tyalso == null) {
             //     return new XElement("em", "MISSING CREF");
             // }
-            return new XElement("div", "See Also: ", new XElement("a", new XAttribute("href", HtmlifySeeCref(tyalso!.Value)), tyalso.Value));
+            //return new XElement("div", "See Also: ", new XElement("a", new XAttribute("href", HtmlifySeeCref(tyalso!.Value)), tyalso.Value));
+            return new XElement("div", "See Also: ", new XElement("span", new XAttribute("class", "inlinecode"), tyalso!.Value));
         case "see":
             var cref = el.Attribute("cref");
             if (cref != null) { // we don't support link
-                return new XElement("a", new XAttribute("href", HtmlifySeeCref(cref.Value)), cref.Value);
+                return new XElement("span", new XAttribute("class", "inlinecode"), cref.Value);
             }
             var href = el.Attribute("href");
             if (href != null) { // we don't support link
@@ -262,7 +273,7 @@ public static class SiteGenerator {
         case "typeparam":
             var name = el.Attribute("name");
             if (name != null) {
-                return new XElement("div", $"Type Parameter <strong>{name.Value}</strong>: ", HtmlifyNodes(el.Nodes()));
+                return new XElement("div", "Type Parameter: ", new XElement("strong", name.Value), " - ", HtmlifyNodes(el.Nodes()));
             }
 
             return new XElement("div", "Type Parameter: ", HtmlifyNodes(el.Nodes()));
@@ -270,6 +281,13 @@ public static class SiteGenerator {
             return new XElement("div", "Returns: ", HtmlifyNodes(el.Nodes()));
         case "value":
             return new XElement("div", "Value: ", HtmlifyNodes(el.Nodes()));
+        case "param":
+            var pname = el.Attribute("name");
+            if (pname != null) {
+                return new XElement("div", "Parameter: ", new XElement("strong", pname.Value), " - ", HtmlifyNodes(el.Nodes()));
+            }
+
+            return new XElement("div", "Parameter: ", HtmlifyNodes(el.Nodes()));
         case "list":
             return new XElement("ul", HtmlifyNodes(el.Nodes()));
         case "item":
@@ -297,11 +315,6 @@ public static class SiteGenerator {
             }
         }
         return result;
-    }
-
-
-    private static string HtmlifySeeCref(string cref) {
-        return "./todo.html";
     }
 
     [Pure]
@@ -365,9 +378,12 @@ public static class SiteGenerator {
             tyPathUrl = "./basic-types.html#real";
             break;
         case "System.Collections.Generic.Dictionary":
-        case "System.Collections.Generic.HashSet": // Basically the same thing
             tyPathHtml = "Dictionary";
             tyPathUrl = "./basic-types.html#dict";
+            break;
+        case "System.Collections.Generic.HashSet":
+            tyPathHtml = "Set";
+            tyPathUrl = "./basic-types.html#array"; // Not sure if we should just show this as an array
             break;
         case "System.Collections.Generic.List":
         case "System.Collections.Generic.IReadOnlyCollection":
@@ -375,6 +391,25 @@ public static class SiteGenerator {
             return FormatTypeNameInternal(ty.GenericParameters![0]) + "[]";
         case "System.Nullable":
             return FormatTypeNameInternal(ty.GenericParameters![0]) + "?";
+        case "System.ValueTuple":
+            var vtsb = new StringBuilder();
+            vtsb.Append('(');
+            var first = true;
+            foreach (var gen in ty.GenericParameters!) {
+                if (!first) {
+                    vtsb.Append(", ");
+                }
+                vtsb.Append(FormatTypeNameInternal(gen));
+
+                first = false;
+            }
+
+            vtsb.Append(')');
+            return vtsb.ToString();
+        case "System.TimeSpan":
+            tyPathHtml = "TimeSpan";
+            tyPathUrl = "./basic-types.html#string"; // TODO: Figure out what RT accepts for TimeSpans. Link to string for now
+            break;
         case "Robust.Shared.Prototypes.ComponentRegistry":
             tyPathHtml = "IComponent[]";
             tyPathUrl = "./basic-types.html#component-registry";

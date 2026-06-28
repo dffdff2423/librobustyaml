@@ -29,6 +29,7 @@
     <li><a href="#prototypes">Prototypes</a></li>
     <li><a href="#components">Components</a></li>
     <li><a href="#data-defs">Data Definitions</a></li>
+    <li><a href="#serializables">Serializables</a></li>
 </ul>
 
 <p>
@@ -60,6 +61,13 @@
     <div class="boxed">
         <h3><a href="./{{ dd | url_encode }}.html">{{ dd }}</a></h3>
         {{ type_info.DataDefinitions[dd].Docs | format_docs }}
+    </div>
+{% endfor %}
+<h2 id="serializables">Misc Serializable Types</h2>
+{% for s in asm_types.Serializables %}
+    <div class="boxed">
+        <h3><a href="./{{ s | url_encode }}.html">{{ s }}</a></h3>
+        {{ type_info.Serializables[s].Docs | format_docs }}
     </div>
 {% endfor %}
 </body>

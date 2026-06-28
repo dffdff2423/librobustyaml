@@ -22,11 +22,17 @@ public sealed record RobustAssemblyTypes {
     /// </summary>
     public Dictionary<string, ComponentInfo> Components { get; init; } = new();
 
+    /// <summary>
+    /// Map the FullName of serializables to their info.
+    /// </summary>
+    public Dictionary<string, SerializableInfo> Serializables { get; init; } = new();
+
     public static RobustAssemblyTypes Merge(RobustAssemblyTypes lhs, RobustAssemblyTypes rhs) {
         var joined = new RobustAssemblyTypes {
             Prototypes = new Dictionary<string, PrototypeInfo>(lhs.Prototypes),
             DataDefinitions = new Dictionary<string, DataDefinitionInfo>(lhs.DataDefinitions),
             Components = new Dictionary<string, ComponentInfo>(lhs.Components),
+            Serializables = new Dictionary<string, SerializableInfo>(lhs.Serializables),
         };
 
         foreach (var (kind, proto) in rhs.Prototypes) {
@@ -37,6 +43,12 @@ public sealed record RobustAssemblyTypes {
 
         foreach (var (kind, dd) in rhs.DataDefinitions) {
             if (!joined.DataDefinitions.TryAdd(kind, dd)) {
+                throw new Exception("Duplicate kind: " + kind);
+            }
+        }
+
+        foreach (var (kind, ser) in rhs.Serializables) {
+            if (!joined.Serializables.TryAdd(kind, ser)) {
                 throw new Exception("Duplicate kind: " + kind);
             }
         }

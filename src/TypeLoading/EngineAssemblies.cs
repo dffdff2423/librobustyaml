@@ -43,6 +43,9 @@ public sealed class EngineAssemblies {
     public readonly PropertyInfo ComponentProtoNameAttributePrototypeNameProperty;
     public readonly Type UnsavedComponentAttribute;
 
+    // Apparently this is just something in System that RT uses.
+    public readonly Type SerializableAttribute = typeof(SerializableAttribute);
+
     public EngineAssemblies(string sharedPath) {
         var shared = Assembly.LoadFrom(sharedPath);
 

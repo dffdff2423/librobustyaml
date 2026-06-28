@@ -1,0 +1,44 @@
+{% comment %}
+  SPDX-FileCopyrightText: (C) 2026 dffdff2423 <dffdff2423@gmail.com>
+
+  SPDX-License-Identifier: GPL-3.0-only
+{% endcomment %}
+<!DOCTYPE html>
+{% from "macros" import meta, fmt_data_field, conventions %}
+<html lang="en_us" >
+    {{ meta() }}
+
+{% if github_slug != blank %}
+    <title>{{ curr_ty.FullName }}: {{ github_slug }}</title>
+{%  else %}
+    <title>{{ curr_ty.FullName }}</title>
+{% endif %}
+<body>
+    <!--suppress HtmlUnknownTarget -->
+    <a href="./index.html">Return Home</a>
+
+    <h1>{{ curr_ty.FullName }}</h1>
+    <div class="docs" >{{ curr_ty.Docs | format_docs }}</div>
+
+    <div class="boxed" >
+        <p>
+            <b>NOTE:</b> This type is not a data definition. This means it typically has custom parsing code and as such we
+            cannot automatically generate documentation for it. If the information above does not give you an idea for how
+            to instansitiate it in Yaml it is recomended to try one of the following approaches:
+        </p>
+        <ul>
+            <li>Refer to pre-existing Yaml</li>
+            <li>Make a guess and run the Yaml linter</li>
+            <li>Read the source code</li>
+            <li>Ask for help (if you can't figure it out)</li>
+        </ul>
+
+
+        <p>
+            If you got here from the index page, note that this type may or may not be used in Yaml code. We don't
+            currently have an algorithem to detect this. Use your best judgment. If the name ends with "System" or
+            "Event" it is almost certenly not used in Yaml.
+        </p>
+    </div>
+</body>
+</html>

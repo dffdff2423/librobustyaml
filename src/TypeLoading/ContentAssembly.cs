@@ -180,6 +180,32 @@ public static class ContentAssembly {
                 infos.Components.Add(yamlName, newComp);
             }
         }
+
+        foreach (var ty in types) {
+            // Skip types we have more complex handling for above
+            var rcAttr =  ty.GetCustomAttribute(engine.RegisterComponentAttribute);
+            var ddAttr =  ty.GetCustomAttribute(engine.DataDefinitionAttribute);
+            var protoAttr =  ty.GetCustomAttribute(engine.PrototypeAttribute);
+            var superClass = ty.BaseType;
+            if (rcAttr != null || superClass == engine.Component || ddAttr != null || protoAttr != null)
+                continue;
+
+            var ser = ty.GetCustomAttribute(engine.SerializableAttribute);
+            if (ser == null)
+                continue;
+
+            Debug.Assert(!ty.IsConstructedGenericType);
+            Debug.Assert(ty.FullName != null);
+
+            var docElem = docs != null ? GetTypeDocs(docs, ty.FullName) : null;
+
+            infos.Serializables.Add(ty.FullName, new SerializableInfo {
+                FullName = ty.FullName,
+                AsmType = ty,
+                Docs = docElem,
+                DocsString = docElem?.ToString(),
+            });
+        }
         return infos;
     }
 
