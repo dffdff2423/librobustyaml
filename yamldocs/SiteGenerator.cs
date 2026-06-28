@@ -52,10 +52,14 @@ public static class SiteGenerator {
         ctx.Options.Filters.AddFilter("format_docs", FormatDocs);
         ctx.Options.Filters.AddFilter("format_type_name", FormatTypeName);
 
-        var generatorVersion = typeof(SiteGenerator).Assembly.GetName().Version;
-        var rtYamlVersion = typeof(YamlProcessingContext).Assembly.GetName().Version;
-        ctx.SetValue("generator_info", $"yamldocs v{generatorVersion}, librobustyaml v{rtYamlVersion}");
+        var ver = typeof(SiteGenerator).Assembly.GetName().Version;
+        if (ver != null) {
+            var vertxt = $"v{ver.Major}.{ver.Minor}.{ver.Build}";
+            ctx.SetValue("generator_info", $"yamldocs {vertxt}");
+            ctx.SetValue("yamldocs_version", vertxt);
+        }
         ctx.SetValue("github_slug",  opts.GhSlug);
+        ctx.SetValue("git_commit", opts.GitCommit);
 
         var protos = opts.Yaml.RobustTypes.Prototypes.Keys.ToArray();
         protos.Sort();
