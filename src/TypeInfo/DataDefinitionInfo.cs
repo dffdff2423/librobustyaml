@@ -39,7 +39,7 @@ public record DataDefinitionInfo {
     public DataFieldInfo[] DataFields { get; init; } = [];
 
     /// <summary>
-    /// The full name of this type's super class
+    /// The full name of this type's super class. Arbitrary for predicted components.
     /// </summary>
     public string? SuperTypeFullName { get; init; }
 }

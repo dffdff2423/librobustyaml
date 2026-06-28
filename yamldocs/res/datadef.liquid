@@ -18,6 +18,9 @@
     <a href="./index.html">Return Home</a>
 
     <h1>{{ curr_ty.FullName }}</h1>
+    {% if curr_ty.SuperTypeFullName != "System.Object" %}
+    <h3>Parent: <a href="./{{ curr_ty.SuperTypeFullName | url_encode }}.html">{{ curr_ty.SuperTypeFullName }}</a></h3>
+    {% endif %}
     <div class="docs" >{{ curr_ty.Docs | format_docs }}</div>
     <ul class="yaml-type">
         {% for field in curr_ty.DataFields %}
