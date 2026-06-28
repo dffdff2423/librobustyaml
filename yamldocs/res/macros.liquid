@@ -4,16 +4,21 @@
   SPDX-License-Identifier: GPL-3.0-only
 {% endcomment %}
 {% macro fmt_data_field(df) %}
-    <div class="docs" >{{ df.Docs | format_docs }}</div>
     {% if df.Required %}
         <li><span class="required">{{ df.Tag }}</span>: {{ df.TypeName | format_type_name }}<li>
     {% else %}
         <li><span class="optional">{{ df.Tag }}</span>: {{ df.TypeName | format_type_name }}<li>
     {% endif %}
+    <div class="docs" >{{ df.Docs | format_docs }}</div>
 {% endmacro %}
 {% macro meta() %}
     <meta http-equiv="content-type" content="text/html;charset=utf-8">
     <meta name="generator" content="{{ generator_info }}" >
 
     <link rel="stylesheet" href="./yamldocs.css" />
+{% endmacro %}
+{% macro conventions() %}
+    <div class="boxed" >
+        This website uses <em>italics</em> to represent optional fields and <strong>bold</strong> to represent required fields. Some type names are simplified or clarified for easier reading.
+    </div>
 {% endmacro %}

@@ -18,18 +18,19 @@ body {
     font-family: monospace;
     font-size: 16px;
     line-height: 1.4;
-    margin: 0 auto;
+    margin: 0.25em auto;
     width: 80%;
     background-color: var(--bg-color);
     color: var(--primary-text-color);
 }
 
-a {
-    color: var(--link-color)
-}
-
 h2, h3, h4, h5, h6 {
     margin-top: 0.5rem;
+}
+
+a {
+    color: var(--link-color);
+    text-decoration: none;
 }
 
 a:visited {
@@ -57,9 +58,9 @@ a:visited {
 }
 
 .docs {
-    margin-top: 1em;
+    margin-top: 0.25em;
     margin-left: 1em;
-    margin-bottom: 0.25em;
+    margin-bottom: 1em;
     font-style: italic;
     color: var(--secondary-text-color);
 }

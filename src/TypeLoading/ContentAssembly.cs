@@ -65,6 +65,10 @@ public static class ContentAssembly {
 
         // I know this is needlessly iterating types an unneeded number of times but this is fast enough for this and makes the code easier to follow
         foreach (var ty in types) {
+            var rcAttr =  ty.GetCustomAttribute(engine.RegisterComponentAttribute);
+            if (rcAttr != null)
+                continue; // some comps inherit from IDDI types so we need to skip those here
+
             var ddAttr = ty.GetCustomAttribute(engine.DataDefinitionAttribute);
             var superClass = ty.BaseType;
             var superDdiAttr = superClass?.GetCustomAttribute(engine.ImplicitDataDefinitionForInheritorsAttribute);

@@ -77,6 +77,7 @@ public static class SiteGenerator {
         var output = opts.GhSlug != null ? Path.Combine(opts.OutputPath, opts.GhSlug) : opts.OutputPath;
         Directory.CreateDirectory(output);
 
+        // Process single page templates
         var index = GetTemplate(parser, "index.liquid");
         var indexTxt = index.Render(ctx);
         File.WriteAllText(Path.Combine(output, "index.html"), indexTxt);
@@ -85,6 +86,7 @@ public static class SiteGenerator {
         var baseTypeTxt = baseType.Render(ctx);
         File.WriteAllText(Path.Combine(output, "basic-types.html"), baseTypeTxt);
 
+        // Process type templates
         var proto = GetTemplate(parser, "prototype.liquid");
         foreach (var (kind, ty) in opts.Yaml.RobustTypes.Prototypes) {
             ctx.SetValue("curr_ty", ty);
@@ -92,11 +94,29 @@ public static class SiteGenerator {
             File.WriteAllText(Path.Combine(output, $"{kind}.html"), txt);
         }
 
+        var comp = GetTemplate(parser, "component.liquid");
+        foreach (var (yamlName, ty) in opts.Yaml.RobustTypes.Components) {
+            if (ty.Unsaved)
+                continue; // Yaml users should not care about unsaved comps
+
+            ctx.SetValue("curr_ty", ty);
+            var txt = comp.Render(ctx);
+            File.WriteAllText(Path.Combine(output, $"{yamlName}.html"), txt);
+        }
+
+        var datadef = GetTemplate(parser, "datadef.liquid");
+        foreach (var (path, ty) in opts.Yaml.RobustTypes.DataDefinitions) {
+            ctx.SetValue("curr_ty", ty);
+            var txt = datadef.Render(ctx);
+            File.WriteAllText(Path.Combine(output, $"{path}.html"), txt);
+        }
+
         var jsonTxt = JsonSerializer.Serialize(opts.Yaml.RobustTypes, new JsonSerializerOptions {
                 WriteIndented = true,
             });
         File.WriteAllText(Path.Combine(output, "types.json"), jsonTxt);
 
+        // Copy non-templates to new site
         foreach (var f in ResourceProvider.GetDirectoryContents(".")) {
             if (Path.GetExtension(f.Name) == ".liquid") {
                 continue;
@@ -158,14 +178,14 @@ public static class SiteGenerator {
     }
 
     private static XElement HtmlifyCsharpDocComment(XElement el) {
-        return new XElement("p",
+        return new XElement("div",
             el
                 .Nodes()
                 .Select(node =>
                     node is XElement child ? HtmlifyElement(child) : node));
     }
 
-    private static XElement HtmlifyElement(XElement el) {
+    private static XNode HtmlifyElement(XElement el) {
         // All ye who enter here abandon hope. Nobody formats their documentation comments correctly so we just map them
         // to something that should look somewhat okay in HTML and call it good enough.
         switch (el.Name.LocalName) {
@@ -194,26 +214,43 @@ public static class SiteGenerator {
             // if (tyalso == null) {
             //     return new XElement("em", "MISSING CREF");
             // }
-            return new XElement("p", "See Also: ", new XElement("a", new XAttribute("href", HtmlifySeeCref(tyalso!.Value)), tyalso.Value));
+            return new XElement("div", "See Also: ", new XElement("a", new XAttribute("href", HtmlifySeeCref(tyalso!.Value)), tyalso.Value));
         case "see":
-            var ty = el.Attribute("cref");
-            // if (ty == null) { // Wizden has at least one broken cref
-            //     return new XElement("em", "MISSING CREF");
-            // }
-            Debug.Assert(!el.HasElements);
-            return new XElement("a", new XAttribute("href", HtmlifySeeCref(ty!.Value)), ty.Value);
+            var cref = el.Attribute("cref");
+            if (cref != null) { // we don't support link
+                return new XElement("a", new XAttribute("href", HtmlifySeeCref(cref.Value)), cref.Value);
+            }
+            var href = el.Attribute("href");
+            if (href != null) { // we don't support link
+                return new XElement("a", new XAttribute("href", href), href.Value);
+            }
+            var langword  = el.Attribute("langword");
+            if (langword != null) {
+                return new XElement("a", new XAttribute("langword", "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/"), langword.Value);
+            }
+            return new XElement("em", "MISSING CREF");
         case "typeparam":
             var name = el.Attribute("name");
             if (name != null) {
-                return new XElement("p", $"Type Parameter <strong>{name.Value}</strong>: ", HtmlifyNodes(el.Nodes()));
+                return new XElement("div", $"Type Parameter <strong>{name.Value}</strong>: ", HtmlifyNodes(el.Nodes()));
             }
 
-            return new XElement("p", "Type Parameter: ", HtmlifyNodes(el.Nodes()));
+            return new XElement("div", "Type Parameter: ", HtmlifyNodes(el.Nodes()));
+        case "returns":
+            return new XElement("div", "Returns: ", HtmlifyNodes(el.Nodes()));
+        case "value":
+            return new XElement("div", "Value: ", HtmlifyNodes(el.Nodes()));
+        case "list":
+            return new XElement("ul", HtmlifyNodes(el.Nodes()));
+        case "item":
+            return new XElement("li", HtmlifyNodes(el.Nodes()));
+        case "description":
+            return new XText(el.Value);
         case "code":
             return new XElement("pre", new XAttribute("class", "boxed"), HtmlifyNodes(el.Nodes()));
         case "inheridoc": // This is something incorrect that wizden uses at least once. Probably should send a PR to fix it.
         case "inheritdoc":
-            return new XElement("p", "Docmentation inherited from superclass. The generator does not support this right now.");
+            return new XElement("div", "Documentation inherited from superclass. The generator does not support this right now.");
         default:
             // I only bothered to implment the elements RT actually uses
             throw new NotSupportedException($"Input {el.Name} is not supported. This is probably an issue in yamldocs/librobustyaml");
@@ -288,12 +325,16 @@ public static class SiteGenerator {
             tyPathUrl = "./basic-types.html#real";
             break;
         case "System.Collections.Generic.Dictionary":
+        case "System.Collections.Generic.HashSet": // Basically the same thing
             tyPathHtml = "Dictionary";
             tyPathUrl = "./basic-types.html#dict";
             break;
         case "System.Collections.Generic.List":
+        case "System.Collections.Generic.IReadOnlyCollection":
             // We do a bit of lying
             return FormatTypeNameInternal(ty.GenericParameters![0]) + "[]";
+        case "System.Nullable":
+            return FormatTypeNameInternal(ty.GenericParameters![0]) + "?";
         case "Robust.Shared.Prototypes.ComponentRegistry":
             tyPathHtml = "IComponent[]";
             tyPathUrl = "./basic-types.html#component-registry";

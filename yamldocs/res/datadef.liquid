@@ -17,10 +17,9 @@
     <!--suppress HtmlUnknownTarget -->
     <a href="./index.html">Return Home</a>
 
-    <h1>{{ curr_ty.KindId }}</h1>
+    <h1>{{ curr_ty.FullName }}</h1>
     <div class="docs" >{{ curr_ty.Docs | format_docs }}</div>
     <ul class="yaml-type">
-        <li><span class="required">type</span>: {{ curr_ty.KindId }}</li>
         {% for field in curr_ty.DataFields %}
             {{ fmt_data_field(field) }}
         {% endfor %}

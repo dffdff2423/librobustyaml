@@ -9,8 +9,8 @@ using JetBrains.Annotations;
 namespace YamlWarrior.Robust.Utilities;
 
 /// <summary>
-/// A class that can parse most types in the "FullName" field of Type Infos. Probably not perfect but good enough for
-/// most purposes.
+/// A class that can parse most types in the "FullName" field of Type Infos. Primerally intended for making nice looking user-visable output.
+/// Probably not perfect but good enough for most purposes.
 /// </summary>
 [PublicAPI]
 public sealed partial record CSharpTypeName {
@@ -38,22 +38,29 @@ public sealed partial record CSharpTypeName {
     private static partial Regex GenericParsingRegex { get; }
 
     public CSharpTypeName(string type) {
-        var split = type.Split('`', count: 2);
-        TypePath = split[0];
+        var bracketSplit = type.Split('[', count: 2);
+        TypePath = bracketSplit[0];
+
+        // ugly hack to clean up normal types
+        if (TypePath[^2] == '`') {
+            TypePath = TypePath[..^2];
+        }
+
+        var genericSplit = type.Split('`', count: 2);
 
         if (type.EndsWith("[]")) {
             IsArray = true;
-            TypePath = TypePath[..^2];
         }
-        if (split.Length > 1) {
-            NumGenerics = ParseLeadingNumber(split[1], out var rest);
+        if (genericSplit.Length > 1) {
+            NumGenerics = ParseLeadingNumber(genericSplit[1], out var rest);
             if (rest == null) return;
 
-            if (!rest.StartsWith("[[")) {
+            rest = bracketSplit[1];
+            if (!rest.StartsWith("[")) {
                 throw new ArgumentException("Invalid type string",  nameof(type));
             }
 
-            GenericParameters = GenericParsingRegex.Matches(rest[1..])
+            GenericParameters = GenericParsingRegex.Matches(rest)
                 .Select(m => m.Groups[1].Value)
                 .Select(m => new CSharpTypeName(m))
                 .ToArray();
