@@ -9,18 +9,33 @@
     {{ meta() }}
 
 {% if github_slug != blank %}
-    <title>{{ curr_ty.KindId }}: {{ github_slug }}</title>
+    <title>{{ curr_ty.YamlName }}: {{ github_slug }}</title>
 {%  else %}
-    <title>{{ curr_ty.KindId }}</title>
+    <title>{{ curr_ty.YamlName }}</title>
 {% endif %}
 <body>
     <!--suppress HtmlUnknownTarget -->
     <a href="./index.html">Return Home</a>
 
-    <h1>{{ curr_ty.FullName }}</h1>
+    <h1>{{ curr_ty.YamlName }}</h1>
     {% if curr_ty.Predicted %}
         <em>This type is predicted.</em>
+        <ul>
+            {% if curr_ty.ClientFullName != blank %}
+                <li><b>Client CSharp Name</b>: <span class="inlinecode" >{{ curr_ty.ClientFullName }}</span></li>
+            {% endif %}
+            {% if curr_ty.ServerFullName != blank %}
+                <li><b>Server CSharp Name</b>: <span class="inlinecode" >{{ curr_ty.ServerFullName }}</span></li>
+            {% endif %}
+            {% if curr_ty.SharedFullName != blank %}
+                <li><b>Shared CSharp Name</b>: <span class="inlinecode" >{{ curr_ty.SharedFullName }}</span></li>
+            {% endif %}
+        </ul>
+    {% else %}
+        <b>CSharp Name</b>: <span class="inlinecode" >{{ curr_ty.FullName }}</span>
     {% endif %}
+
+
     <div class="docs" >{{ curr_ty.Docs | format_docs }}</div>
     <ul class="yaml-type">
         {% for field in curr_ty.DataFields %}

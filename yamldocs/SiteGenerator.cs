@@ -330,8 +330,18 @@ public static class SiteGenerator {
             tyPathHtml = "integer" + ty.TypePath[^2..];
             tyPathUrl = "./basic-types.html#integer";
             break;
-        case "System.Byte":
+        case "System.UInt64":
+        case "System.UInt32":
+        case "System.UInt16":
+            tyPathHtml = "uinteger" + ty.TypePath[^2..];
+            tyPathUrl = "./basic-types.html#integer";
+            break;
+        case "System.SByte":
             tyPathHtml = "integer8";
+            tyPathUrl = "./basic-types.html#integer";
+            break;
+        case "System.Byte":
+            tyPathHtml = "uinteger8";
             tyPathUrl = "./basic-types.html#integer";
             break;
         case "System.Boolean":

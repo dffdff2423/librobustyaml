@@ -9,9 +9,9 @@
     {{ meta() }}
 
 {% if github_slug != blank %}
-    <title>{{ curr_ty.KindId }}: {{ github_slug }}</title>
+    <title>{{ curr_ty.FullName }}: {{ github_slug }}</title>
 {%  else %}
-    <title>{{ curr_ty.KindId }}</title>
+    <title>{{ curr_ty.FullName }}</title>
 {% endif %}
 <body>
     <!--suppress HtmlUnknownTarget -->

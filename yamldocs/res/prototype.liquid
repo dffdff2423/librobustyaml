@@ -18,6 +18,12 @@
     <a href="./index.html">Return Home</a>
 
     <h1>{{ curr_ty.KindId }}</h1>
+
+    {% comment %}
+    TODO: Support generating links to source code. This turned out to be harder than I expected.
+    {% endcomment %}
+    <b>CSharp Name</b>: <span class="inlinecode" >{{ curr_ty.FullName }}</span>
+
     <div class="docs" >{{ curr_ty.Docs | format_docs }}</div>
     <ul class="yaml-type">
         <li><span class="required">type</span>: {{ curr_ty.KindId }}</li>

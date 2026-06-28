@@ -64,3 +64,8 @@ a:visited {
     font-style: italic;
     color: var(--secondary-text-color);
 }
+
+.inlinecode {
+    background-color: var(--highlight);
+    color: var(--secondary-text-color);
+}
