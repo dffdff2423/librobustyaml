@@ -86,12 +86,18 @@ public static class SiteGenerator {
         var baseTypeTxt = baseType.Render(ctx);
         File.WriteAllText(Path.Combine(output, "basic-types.html"), baseTypeTxt);
 
+        var redirect =  GetTemplate(parser, "redirect.liquid");
+
         // Process type templates
         var proto = GetTemplate(parser, "prototype.liquid");
         foreach (var (kind, ty) in opts.Yaml.RobustTypes.Prototypes) {
             ctx.SetValue("curr_ty", ty);
             var txt = proto.Render(ctx);
             File.WriteAllText(Path.Combine(output, $"{kind}.html"), txt);
+
+            ctx.SetValue("redirect_target", kind);
+            var redirectTxt = redirect.Render(ctx);
+            File.WriteAllText(Path.Combine(output, $"{ty.FullName}.html"), redirectTxt);
         }
 
         var comp = GetTemplate(parser, "component.liquid");
@@ -102,6 +108,30 @@ public static class SiteGenerator {
             ctx.SetValue("curr_ty", ty);
             var txt = comp.Render(ctx);
             File.WriteAllText(Path.Combine(output, $"{yamlName}.html"), txt);
+
+            if (!ty.Predicted) {
+                ctx.SetValue("redirect_target", yamlName);
+                var redirectTxt = redirect.Render(ctx);
+                File.WriteAllText(Path.Combine(output, $"{ty.FullName}.html"), redirectTxt);
+            } else {
+                if (ty.ClientFullName != null) {
+                    ctx.SetValue("redirect_target", yamlName);
+                    var redirectTxt = redirect.Render(ctx);
+                    File.WriteAllText(Path.Combine(output, $"{ty.ClientFullName}.html"), redirectTxt);
+                }
+
+                if (ty.ServerFullName != null) {
+                    ctx.SetValue("redirect_target", yamlName);
+                    var redirectTxt = redirect.Render(ctx);
+                    File.WriteAllText(Path.Combine(output, $"{ty.ServerFullName}.html"), redirectTxt);
+                }
+
+                if (ty.SharedFullName != null) {
+                    ctx.SetValue("redirect_target", yamlName);
+                    var redirectTxt = redirect.Render(ctx);
+                    File.WriteAllText(Path.Combine(output, $"{ty.SharedFullName}.html"), redirectTxt);
+                }
+            }
         }
 
         var datadef = GetTemplate(parser, "datadef.liquid");

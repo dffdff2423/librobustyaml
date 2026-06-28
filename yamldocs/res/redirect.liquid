@@ -1,0 +1,19 @@
+{% comment %}
+  SPDX-FileCopyrightText: (C) 2026 dffdff2423 <dffdff2423@gmail.com>
+
+  SPDX-License-Identifier: GPL-3.0-only
+{% endcomment %}
+{% from "macros" import meta %}
+<!DOCTYPE html>
+<html lang="en_us" >
+    {{ meta() }}
+
+    <meta http-equiv="refresh" content="0; url=./{{ redirect_target |  url_encode }}.html" />
+
+    <title>Redirecting...</title>
+<body>
+<h1>Redirect</h1>
+If you are not redirected automatically click <a href="./{{ redirect_target | url_encode }}.html">here</a>
+
+</body>
+</html>
