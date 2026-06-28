@@ -81,7 +81,7 @@ public static class SiteGenerator {
         ctx.SetValue("type_info", opts.Yaml.RobustTypes);
 
 
-        var output = opts.GhSlug != null ? Path.Combine(opts.OutputPath, opts.GhSlug) : opts.OutputPath;
+        var output =  opts.OutputPath;
         Directory.CreateDirectory(output);
 
         // Process single page templates
